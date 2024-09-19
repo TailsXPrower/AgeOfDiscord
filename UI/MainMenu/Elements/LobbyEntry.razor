@@ -1,0 +1,53 @@
+@using Sandbox.Network
+@using Sandbox.UI
+@using System
+@inherits Panel
+@namespace Menu
+
+<style>
+	.name {
+		font-family: Poppins;
+		color: black;
+		font-size: 24px;
+		padding: 10px;
+	}
+
+	.members {
+		font-family: Poppins;
+		color: black;
+		font-size: 24px;
+		padding: 10px;
+	}
+</style>
+
+<root style="width: 100%; flex-shrink: 0">
+	<button style="width: 100%; flex-shrink: 0">
+		<div class="horizontal-layout">
+			<div class="name">
+				@Lobby.Name
+			</div>
+			<div class="members">
+				@Lobby.Members / @Lobby.MaxMembers
+			</div>
+		</div>
+	</button>
+</root>
+
+@code
+{
+	public LobbyInformation Lobby;
+	public new Action OnClick;
+
+	public override void OnButtonEvent( ButtonEvent e )
+	{
+		base.OnButtonEvent( e );
+		
+		if (e.Button.Equals("mouseleft"))
+			OnClick.Invoke();
+	}
+
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( Lobby );
+}

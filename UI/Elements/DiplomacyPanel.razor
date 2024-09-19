@@ -1,0 +1,183 @@
+﻿@using AgeOfDiscord.UI
+@using AgeOfDiscord.UI.Menu
+@using Sandbox;
+@using Sandbox.Exceptions
+@using Sandbox.GameData
+@using Sandbox.UI;
+@using Sandbox.Utils
+@inherits Panel
+
+<root class="horizontal-layout" style="flex-shrink: 1; gap: 16px;">
+	<div class="vertical-layout">
+		<div class="box center-child" style="width: 18vw;">
+			<span style="font-size: 20px; padding: 10px">@Country.Name</span>
+		</div>
+		<div class="box" style="background-image: url('@Country.Flag'); width: 18vw; height: 38vh; border-radius: 0 0 12vw 12vw; background-size: cover;">
+		</div>
+	</div>
+	<div class="vertical-layout">
+		<div class="box center-child" style="width: 18vw; height: 50px; background-color: darkgray;">
+			<span style="font-size: 22px; padding: 10px;">Information about country</span>
+		</div>
+		<div class="box" style="width: 18vw;">
+			<span style="font-size: 20px; padding: 10px">Current relation: @Country.Relations[Settings.PlayableCountry]</span>
+		</div>
+		<div class="box" style="width: 18vw;">
+			<span style="font-size: 20px; padding: 10px">Culture: @Country.Culture.Name</span>
+		</div>
+	</div>
+	<div class="vertical-layout">
+		<div class="box center-child" style="width: 18vw; height: 50px; background-color: darkgray;">
+			<span style="font-size: 22px; padding: 10px;">Actions</span>
+		</div>
+		@if ( Country.Relations[Settings.PlayableCountry] != Relation.Ally && Country.Relations[Settings.PlayableCountry] != Relation.War)
+		{
+			<button ctooltip="@GetAllyTooltip()" class="center-child" style="width: 18vw;" onclick="@SendAlly">
+				<span style="font-size: 20px; padding: 10px">Ally</span>
+			</button>
+		}
+		@if ( Country.Relations[Settings.PlayableCountry] != Relation.Neutral )
+		{
+			<button ctooltip="@GetNeutralityTooltip()" class="center-child" style="width: 18vw; font-size: 20px; padding: 10px;" onclick="@RequestNeutrality">
+				Request neutrality
+			</button>
+		} else
+		{
+			<button ctooltip="@GetDeclareWarTooltip()" class="center-child" style="width: 18vw; font-size: 20px; padding: 10px;" onclick="@DeclareWar">
+				Declare war
+			</button>	
+		}
+		
+		@if (Country.Relations[Settings.PlayableCountry] != Relation.War)
+		{
+			<button class="center-child" style="width: 18vw;" onclick="@Trade">
+				<span style="font-size: 20px; padding: 10px">Trade</span>
+			</button>
+		}
+	</div>
+</root>
+
+@code
+{
+	public Country Country = null;
+
+	public void Trade()
+	{
+		var gameUi = Scene.Components.GetInDescendants<GameUI>();
+		var trade = new TradeMenu
+		{
+			CountryToTrade = Country
+		};
+		gameUi.Panel.AddChild( trade );
+	}
+	
+	public string GetDeclareWarTooltip()
+	{
+		try
+		{
+			Settings.PlayableCountry.CheckDeclareWar( Scene, Country );
+			return "Click to declare war";
+		}
+		catch ( Exception ex )
+		{
+			return ex.Message;
+		}
+	}
+	
+	public void DeclareWar()
+	{
+		try
+		{
+			Settings.PlayableCountry.CheckDeclareWar( Scene, Country );
+
+			var gameUi = Scene.Components.GetInDescendants<GameUI>();
+			var confirmation = new Confirmation
+			{
+				OnAgree = () =>
+				{
+					Country.DeclareWar(gameUi, Settings.PlayableCountry.Name, Country.Name);
+				},
+				Message = "Are you sure you want to declare war?"
+			};
+			gameUi.Panel.AddChild( confirmation );
+		}
+		catch ( Exception _ )
+		{
+			// ignored
+		}
+	}
+	
+	public string GetAllyTooltip()
+	{
+		try
+		{
+			Settings.PlayableCountry.CheckAlly( Scene, Country );
+			return "Click to ally";
+		}
+		catch ( Exception ex )
+		{
+			return ex.Message;
+		}
+	}
+	
+	public void SendAlly()
+	{
+		try
+		{
+			Settings.PlayableCountry.CheckAlly( Scene, Country );
+
+			var gameUi = Scene.Components.GetInDescendants<GameUI>();
+			var confirmation = new Confirmation
+			{
+				OnAgree = () =>
+				{
+					Country.MakeAlly(gameUi, Settings.PlayableCountry.Name, Country.Name);
+				},
+				Message = $"Are you sure you want to ally {Country.Name}?"
+			};
+			gameUi.Panel.AddChild( confirmation );
+		}
+		catch ( Exception _ )
+		{
+			// ignored
+		}
+	}
+	
+	public string GetNeutralityTooltip()
+	{
+		try
+		{
+			Settings.PlayableCountry.CheckNeutrality( Scene, Country );
+			return "Click to request neutrality";
+		}
+		catch ( Exception ex )
+		{
+			return ex.Message;
+		}
+	}
+	
+	public void RequestNeutrality()
+	{
+		try
+		{
+			Settings.PlayableCountry.CheckNeutrality( Scene, Country );
+
+			var gameUi = Scene.Components.GetInDescendants<GameUI>();
+			var confirmation = new Confirmation
+			{
+				OnAgree = () =>
+				{
+					Country.MakeNeutral(Settings.PlayableCountry.Name, Country.Name);
+				},
+				Message = $"Are you sure you want to send neutrality to {Country.Name}?"
+			};
+			gameUi.Panel.AddChild( confirmation );
+		}
+		catch ( GameException _ ) { }
+	}
+	
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( Country, Country.Relations[Settings.PlayableCountry] );
+}

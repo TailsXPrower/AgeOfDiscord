@@ -1,0 +1,118 @@
+﻿@using Sandbox;
+@using Sandbox.Configs
+@using Sandbox.GameData
+@using Sandbox.Modes
+@using Sandbox.UI;
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+@attribute [StyleSheet]
+
+<root class="center-child" style="position: absolute; width: 100%; height: 100%; background-color: rgb(0, 0, 0, 0.68); pointer-events: all; z-index: 1">
+	<div class="window" style="width: 56.5vw; height: 52vh;">
+		<div class="vertical-layout" style="gap: 0;">
+			<div class="horizontal-layout" style="margin: 5px;">
+				<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+					Guide
+				</div>
+				<button class="center-child" style="width: 45px; height: 45px; flex-shrink: 0; font-size: 20px;" onclick="@Close">
+					❌
+				</button>
+			</div>
+			<div class="horizontal-layout" style="margin: 5px;">
+				<button class="center-child @IsActive(GuidePage.Beginning)" style="width: 14.2857%" onclick="@(() => CurrentPage = GuidePage.Beginning)">
+					<a style="font-size: 20px; padding: 10px">Beginning</a>
+				</button>
+				<button class="center-child @IsActive(GuidePage.Resources)" style="width: 14.2857%" onclick="@(() => CurrentPage = GuidePage.Resources)">
+					<a style="font-size: 20px; padding: 10px">Resources</a>
+				</button>
+				<button class="center-child @IsActive(GuidePage.Modes)" style="width: 14.2857%" onclick="@(() => CurrentPage = GuidePage.Modes)">
+					<a style="font-size: 20px; padding: 10px">Map modes</a>
+				</button>
+				<button class="center-child @IsActive(GuidePage.Diplomacy)" style="width: 14.2857%" onclick="@(() => CurrentPage = GuidePage.Diplomacy)">
+					<a style="font-size: 20px; padding: 10px">Diplomacy</a>
+				</button>
+				<button class="center-child @IsActive(GuidePage.Trading)" style="width: 14.2857%" onclick="@(() => CurrentPage = GuidePage.Trading)">
+					<a style="font-size: 20px; padding: 10px">Trading</a>
+				</button>
+				<button class="center-child @IsActive(GuidePage.Time)" style="width: 14.2857%" onclick="@(() => CurrentPage = GuidePage.Time)">
+					<a style="font-size: 20px; padding: 10px">Time</a>
+				</button>
+				<button class="center-child @IsActive(GuidePage.Army)" style="width: 14.2857%" onclick="@(() => CurrentPage = GuidePage.Army)">
+					<a style="font-size: 20px; padding: 10px">Army</a>
+				</button>
+			</div>
+			@switch(CurrentPage)
+			{
+				case GuidePage.Beginning:
+					<div class="box" style="margin: 10px; padding: 10px; font-size: 20px;">
+						Hello, dear Player! I suppose you have just arrived in your country and you probably have a question about how everything works. Nothing, in this book you will find everything you need. If you have a question about where to start, I will give advice, start with the construction of new buildings, your country needs more resources to start developing. Start with sawmills and mines, and then farms and wells. And then start building defensive structures like barracks, stables, and so on.
+					</div>
+					break;
+				case GuidePage.Resources:
+					<div class="box" style="margin: 10px; padding: 10px; font-size: 20px;">
+						You may have a question, what are the numbers in your upper left corner? These are not simple numbers, in fact, they are something that affects many aspects of your country. Let's start with the first one, gold coins are the money of your country, thanks to them you can start building new buildings or you can use them in trade with other countries! The second we will have is wood, wood is also required for the construction of new buildings, as well as in trade with other countries. The third one will be ore, the ore is required to create new armies and units, but can also be used in trade with other countries. And fourthly, we have manpower, this is an important resource, without which you simply will not have profit in the country, for each person in the country you are given +0.001 coins. Also, manpower are needed to create units.
+					</div>
+					break;
+				case GuidePage.Modes:
+					<div class="box vertical-layout" style="margin: 10px; padding: 10px; font-size: 20px;">
+						<span>The map has several modes, and each has its own purpose. As you can see, they are in the lower right corner and there are four of them. Province mode, culture mode, army mode, build mode.</span>
+						<span>Province mode is required so that you can calmly study the map or it can be used to declare war on other countries.</span>
+						<span>Culture mode, simply shows you which provinces belong to which culture, since each country has its own culture.</span>
+						<span>Army mode, here you can create new armies, assign new units to them, as well as enter into battle, conquer territories and everything else.</span>
+						<span>Build mode, everything is clear here, in this mode you can build new buildings or destroy existing ones!</span>
+					</div>
+					break;
+				case GuidePage.Diplomacy:
+					<div class="box" style="margin: 10px; padding: 10px; font-size: 20px;">
+						There is such a thing as diplomacy in the game, and each country can form an alliance with a country or declare war on it. Or trade. But in order to create alliances, countries must share the same culture or have a common enemy. And to declare war, your enemy must have provinces that belong to your culture or have to pass one game year to declare war for no reason.
+					</div>
+					break;
+				case GuidePage.Trading:
+					<div class="box" style="margin: 10px; padding: 10px; font-size: 20px;">
+						By opening this menu through diplomacy, you can trade with other countries. It is enough to enter values in the input fields for a specific resource and send the offer to another country.
+					</div>
+					break;
+				case GuidePage.Time:
+					<div class="box" style="margin: 10px; padding: 10px; font-size: 20px;">
+						In the top right corner, you can discover time panel! There are 5 speeds in the game, and the most recent is the fastest. You can also pause time by simply tapping on the time or pressing Spacebar. As long as time is paused, nothing will happen in the world!
+					</div>
+					break;
+				case GuidePage.Army:
+					<div class="box" style="margin: 10px; padding: 10px; font-size: 20px;">
+						In the game, you can create armies for your country. And they are needed to capture other countries! The more fully equipped armies you have, the better. Fully filled armies are better than half-filled ones. But to start fighting other countries, you need at least three half-filled armies! To create a new army, you will need 10 ore, as well as a built Headquarters building. A country cannot have more armies than the number of cities in the country! Also, the number of units in the army depends on the wells built in the country. By default, the maximum number of units in an army is 30 units. To move an army from one province to another, you must first select the army with the left mouse button, and then click on the desired province with the right mouse button. Two armies cannot be located in the same province.
+					</div>
+					break;
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
+		</div>
+	</div>
+</root>
+
+@code
+{
+	private enum GuidePage
+	{
+		Beginning,
+		Resources,
+		Modes,
+		Diplomacy,
+		Trading,
+		Time,
+		Army
+	}
+
+	private GuidePage CurrentPage = GuidePage.Beginning;
+
+	private string IsActive( GuidePage page )
+	{
+		return CurrentPage == page ? "active" : "";
+	}
+	
+	private void Close()
+	{
+		Sound.Play( "click" ).Pitch = 0.9f;
+		Delete();
+	}
+}

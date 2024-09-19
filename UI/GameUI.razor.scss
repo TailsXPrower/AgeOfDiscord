@@ -1,0 +1,20 @@
+@import "global.scss";
+
+GameUI
+{
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	font-weight: bold;
+	font-family: Calibri;
+	border-radius: 20px;
+
+	.title
+	{
+		font-size: 25px;
+		font-family: Poppins;
+		color: #fff;
+	}
+}

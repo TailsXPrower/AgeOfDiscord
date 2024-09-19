@@ -1,0 +1,73 @@
+﻿@using Sandbox;
+@using Sandbox.Configs
+@using Sandbox.GameData
+@using Sandbox.Modes
+@using Sandbox.UI;
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+@attribute [StyleSheet]
+
+<root class="center-child" style="position: absolute; width: 100%; height: 100%; z-index: 120;">
+	<div class="window" style="width: 22vw; max-height: 32vh; pointer-events: all;">
+		<div class="vertical-layout" style="gap: 0;">
+			<div class="horizontal-layout" style="margin: 5px;">
+				<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+					Information
+				</div>
+				<button class="center-child" style="width: 45px; height: 45px; flex-shrink: 0; font-size: 20px;" onclick="@Close">
+					❌
+				</button>
+			</div>
+			<div class="box center-child" style="padding: 10px; font-size: 20px; margin: 5px; text-align: center">
+				@Message
+			</div>
+			<div class="horizontal-layout" style="gap: 2px; margin: 5px">
+				<button class="center-child" style="width: 100%;" onclick="@Close">
+					<a style="font-size: 20px; padding: 5px;">@Accept</a>
+				</button>
+			</div>
+		</div>
+	</div>
+</root>
+
+@code
+{
+	public string Message;
+	public string Accept;
+
+	private readonly TimeUntil Decay = 10;
+
+	private bool Deleting;
+
+	public override void Tick()
+	{
+		base.Tick();
+
+		try
+		{
+			var time = Scene.Components.GetInDescendants<TimeComponent>();
+
+			if ( time.Pause )
+			{
+				return;
+			}
+
+			if ( !Decay || Deleting ) return;
+		
+			Deleting = true;
+			Delete();
+		} catch (NullReferenceException) {}
+	}
+
+	private void Close()
+	{
+		Sound.Play( "click" ).Pitch = 0.8f;
+		Delete();
+	}
+	
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( Message, Accept );
+}

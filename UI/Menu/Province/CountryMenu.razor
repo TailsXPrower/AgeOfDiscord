@@ -1,0 +1,110 @@
+﻿@using Sandbox;
+@using Sandbox.Configs
+@using Sandbox.GameData
+@using Sandbox.Modes
+@using Sandbox.UI;
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+@attribute [StyleSheet]
+
+<root class="window left" style="width: 26vw; max-height: 36vh; margin-left: 10px; z-index: 1">
+	<div class="vertical-layout" style="gap: 0;">
+		<div class="horizontal-layout" style="margin: 5px;">
+			<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+				@GetCountryName()
+			</div>
+			<button class="center-child" style="width: 45px; height: 45px; flex-shrink: 0; font-size: 20px;" onclick="@Close">
+				❌
+			</button>
+		</div>
+		@if ( Country != null )
+		{
+			<div class="horizontal-layout" style="margin: 5px;">
+				<div class="vertical-layout" style="gap: 8px;">
+					<div class="box" style="width: 8vw; height: 20vh; background-image: url('@Country.Leader.Portrait'); background-size: cover">
+					</div>
+					<div class="box center-child">
+						<span style="font-size: 20px; padding: 5px; max-width: calc(128px * 1.1); text-overflow: ellipsis; text-align: center">@Country.Leader.Name</span>
+					</div>
+				</div>
+				<div class="vertical-layout" style="width: 53.5%;">
+					<div class="box" style="width: 100%;">
+						<span class="info">Capital: @Country.Capital.Name</span>
+					</div>
+					<div class="box" style="width: 100%;">
+						<span class="info">Provinces: @Country.Provinces.Count</span>
+					</div>
+					<div class="box" style="width: 100%;">
+						<span class="info">Towns: @Country.Towns.Count</span>
+					</div>
+					<div class="box" style="width: 100%;">
+						<span class="info">Culture: @Country.Culture.Name</span>
+					</div>
+					<div class="box" style="width: 100%;">
+						<span class="info">Army: @(Country == Settings.PlayableCountry || Settings.PlayableCountry.Relations.TryGetValue(Country, out var relation) && relation == Relation.Ally ? Country.Armies.Count.ToString() : "???")</span>
+					</div>
+				</div>
+				@if ( Country != Settings.PlayableCountry )
+				{
+					<button class="center-child" style="width: 45px; height: 45px; flex-shrink: 0; font-size: 20px;" onclick="@Diplomacy">
+						<img style="margin: 5px 0 5px 5px; width: 32px; height: 32px;" alt="money" src="/ui/icons/diplomacy.png">
+					</button>
+				}
+			</div>	
+		}
+	</div>
+</root>
+
+@code
+{
+	public Country Country;
+	
+	private void Close()
+	{
+		Sound.Play( "click" ).Pitch = 0.8f;
+		Delete();
+		ProvinceMode.DeselectCountry(Scene);
+	}
+	
+	private void Diplomacy()
+	{
+		if ( Settings.PlayableCountry.IsSpectator )
+		{
+			PlaySound("decline");
+			return;
+		}
+		
+		var ui = Scene.Components.GetInDescendants<GameUI>();
+		var menus = ui.Panel.ChildrenOfType<HUD>().ToList();
+		if ( menus.Count != 0 )
+		{
+			var menu = menus.First();
+			var relationsMenus = menu.ChildrenOfType<DiplomacyMenu>().ToList();
+			if ( relationsMenus.Count != 0 )
+			{
+				var relationsMenu = relationsMenus.First();
+				relationsMenu.SelectedCountry = new KeyValuePair<Country, Relation>( Country, Country.Relations[Settings.PlayableCountry] );
+			}
+			else
+			{
+				menu.AddChild( new DiplomacyMenu { SelectedCountry = new KeyValuePair<Country, Relation>( Country, Country.Relations[Settings.PlayableCountry] ) } );
+			}
+		}
+	}
+	
+	private string GetCountryManpower()
+	{
+		return Country == Settings.PlayableCountry || Country.Relations[Settings.PlayableCountry] == Relation.Ally ? Country.GetManpowerString() : "???";
+	}
+
+	private string GetCountryName()
+	{
+		return Country != null ? Country.Name : "No selected country!";
+	}
+	
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( GameMap.SelectedCountry );
+}

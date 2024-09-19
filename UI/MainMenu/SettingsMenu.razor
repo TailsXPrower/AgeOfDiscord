@@ -1,0 +1,56 @@
+@using System.Text.Json.Nodes
+@using global::Menu
+@using Sandbox.UI
+@inherits Panel
+
+@namespace Menu
+
+<root class="center-child">
+	<div class="vertical-layout center-child" style="gap: 40px">
+		<div class="title">
+			Settings
+		</div>
+		<div class="window vertical-layout" style="gap: 2px;">
+			<Checkbox Checked="@Introduction" ValueChanged="@OnIntroduction" style="padding: 0 10px 0 10px; height: 55px; font-size: 28px;">Enable game intro</Checkbox>
+			<Checkbox Checked="@DisableMusic" ValueChanged="@OnDisableMusic" style="padding: 0 10px 0 10px; height: 55px; font-size: 28px;">Disable ingame ambience</Checkbox>
+			<Checkbox Checked="@Debug" ValueChanged="@OnDebug" style="padding: 0 10px 0 10px; height: 55px; font-size: 28px;">Enable debug mode</Checkbox>
+		</div>
+		<div class="settings-buttons">
+			<Button class="center-child" onclick=@Return style="padding: 0 40px 0 40px; height: 55px; font-size: 28px;">Return</Button>
+		</div>
+	</div>
+</root>
+
+@code
+{
+	public static bool Introduction = true;
+	public static bool DisableMusic;
+	public static bool Debug;
+
+	public MenuComponent Menu;
+
+	public void OnIntroduction(bool enabled)
+	{
+		Introduction = enabled;
+	}
+	
+	public void OnDisableMusic(bool enabled)
+	{
+		DisableMusic = enabled;
+	}
+	
+	public void OnDebug(bool enabled)
+	{
+		Debug = enabled;
+	}
+
+	void Return()
+	{
+		var jsonObject = new JsonObject();
+		var settings = new JsonObject { { "debug", Debug }, { "introduction", Introduction }, { "disable_music", DisableMusic } };
+		jsonObject.Add( "settings", settings );
+		FileSystem.Data.WriteJson("settings.json", jsonObject);
+		
+		Menu.Transition(this, Menu.MainMenu);
+	}
+}

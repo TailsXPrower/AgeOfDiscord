@@ -1,0 +1,30 @@
+.battle {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  z-index: 0;
+  background-color: white;
+  border-radius: 30px;
+  background-image: url("/ui/icons/battle.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  
+  &:hover {
+    filter: brightness(0.5);
+  }
+}
+
+.bar {
+  width: 630px;
+  height: 24px;
+  background-color: darkred;
+  border: 1px black;
+  border-radius: 10px;
+
+  .progress {
+    background-color: green;
+    border: 1px lightgreen;
+    border-radius: 10px;
+    transition: width 0.1s;
+  }
+}

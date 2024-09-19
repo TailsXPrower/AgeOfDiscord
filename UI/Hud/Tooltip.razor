@@ -1,0 +1,80 @@
+﻿@using Sandbox.UI;
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+
+<root style="position: absolute; width: 100%; height: 100%; z-index: 1000">
+	<div @ref="Panel" class="box" style="position: absolute; width: 12vw; pointer-events: none; transition: all 0.01s">
+		<div class="vertical-layout" style="margin: 5px; gap: 4px">
+			@foreach ( var str in Text.Split( "/n" ) )
+			{
+				<a style="font-size: 20px;">@str</a>
+			}
+		</div>
+	</div>
+</root>
+
+@code
+{
+	private Panel Panel;
+	private string Text = "";
+	
+	private static Panel CheckForTooltip(Panel child)
+	{
+		Panel hoveredChild = null;
+		foreach (var childChild in child.Children)
+		{
+			if ( childChild.GetAttribute( "ctooltip" ) == null )
+			{
+				hoveredChild = CheckForTooltip(childChild);
+				
+				if (hoveredChild != null)
+					break;
+				
+				continue;
+			}
+
+			if ( !childChild.HasHovered ) continue;
+			
+			hoveredChild = childChild;
+			break;
+		}
+
+		return hoveredChild;
+	}
+	
+	public override void Tick()
+	{
+		Panel hoveredChild = null;
+		foreach (var parentChild in Parent.Children)
+		{
+			if (parentChild == this)
+				continue;
+			
+			hoveredChild = CheckForTooltip( parentChild );
+			
+			if (hoveredChild != null)
+				break;
+		}
+
+		if ( hoveredChild == null )
+		{
+			Text = "";
+			Panel.Style.Opacity = 0;
+			Panel.Style.Display = DisplayMode.None;
+			return;
+		}
+		
+		Text = hoveredChild.GetAttribute( "ctooltip" );	
+		
+		Panel.Style.Opacity = 1;
+		Panel.Style.Display = DisplayMode.Flex;
+		Panel.Style.Left = MousePosition.x * Panel.ScaleFromScreen + 16;
+		Panel.Style.Top = MousePosition.y * Panel.ScaleFromScreen;
+	}
+	
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( Text );
+}

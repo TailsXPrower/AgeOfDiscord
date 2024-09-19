@@ -1,0 +1,106 @@
+﻿@using Sandbox;
+@using Sandbox.Configs
+@using Sandbox.GameData
+@using Sandbox.Modes
+@using Sandbox.UI;
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+@attribute [StyleSheet]
+
+<root class="center-child" style="position: absolute; width: 100%; height: 100%; z-index: 1002; background-color: rgb(0, 0, 0, 1); pointer-events: all;">
+	<div class="center-child" style="padding: 10px; font-size: 28px; margin: 5px; text-align: center; opacity: 0; color: white;" @ref="MessagePanel">
+		@Message
+	</div>
+</root>
+
+@code
+{
+	public Panel MessagePanel;
+	public string Message = "";
+
+	public SoundHandle Music;
+
+	public void Start(GameObject gameObject)
+	{
+		Music = Sound.Play("introduction");
+		Music.Volume = 0;
+		
+		Animation.Play(gameObject, "fade-in", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			Message = "The world is aflame.";
+			MessagePanel.Style.Opacity = progress;
+			Music.Volume = progress * 0.4f;
+		}).PlayAfter(gameObject, "fade-out", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			MessagePanel.Style.Opacity = 1 - progress;
+		}).PlayAfter(gameObject, "fade-in", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			Message = "The mighty empire of Arvelore is bleeding under attacks of barbarians.";
+			MessagePanel.Style.Opacity = progress;
+		}).PlayAfter(gameObject, "idle", 2, EasingFunc.Linear, ( _, progress ) => {})
+		.PlayAfter(gameObject, "fade-out", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			MessagePanel.Style.Opacity = 1 - progress;
+		}).PlayAfter(gameObject, "fade-in", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			Message = "Ghuron the Blackhammer has united savage tribes of the North and made a dark pact with the Forgotten.";
+			MessagePanel.Style.Opacity = progress;
+		}).PlayAfter(gameObject, "idle", 2, EasingFunc.Linear, ( _, progress ) => {})
+		.PlayAfter(gameObject, "fade-out", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			MessagePanel.Style.Opacity = 1 - progress;
+		}).PlayAfter(gameObject, "fade-in", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			Message = "This unholy crusade was aimed at the very heart of Arvelore to punish and decimate “quenyar's bastards”; and it succeeded.";
+			MessagePanel.Style.Opacity = progress;
+		}).PlayAfter(gameObject, "idle", 2, EasingFunc.Linear, ( _, progress ) => {})
+		.PlayAfter(gameObject, "fade-out", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			MessagePanel.Style.Opacity = 1 - progress;
+		}).PlayAfter(gameObject, "fade-in", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			Message = "But many northerners flew away in fear, pushing other tribes forward; they captured countless shards of dying empire thus the old borders were completely redrawn.";
+			MessagePanel.Style.Opacity = progress;
+		}).PlayAfter(gameObject, "idle", 4, EasingFunc.Linear, ( _, progress ) => {})
+		.PlayAfter(gameObject, "fade-out", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			MessagePanel.Style.Opacity = 1 - progress;
+		}).PlayAfter(gameObject, "fade-in", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			Message = "Discord has taken control of people's minds; and the age of countless wars has started.";
+			MessagePanel.Style.Opacity = progress;
+		}).PlayAfter(gameObject, "idle", 2, EasingFunc.Linear, ( _, progress ) => {})
+		.PlayAfter(gameObject, "fade-out", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			MessagePanel.Style.Opacity = 1 - progress;
+		}).PlayAfter(gameObject, "fade-in", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			Message = "Dozens of new kingdoms were built on corpse of the old empire, but their right to exist must be proved by blood and steel in these dark times.";
+			MessagePanel.Style.Opacity = progress;
+		}).PlayAfter(gameObject, "idle", 2, EasingFunc.Linear, ( _, progress ) => {})
+		.PlayAfter(gameObject, "fade-out", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			MessagePanel.Style.Opacity = 1 - progress;
+		}).PlayAfter(gameObject, "fade-in", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			Message = "Age of Discord is a world frozen in time right a second before a new round of war - it's your chance to rise and rule the ashes.";
+			MessagePanel.Style.Opacity = progress;
+		}).PlayAfter(gameObject, "idle", 2, EasingFunc.Linear, ( _, progress ) => {})
+		.PlayAfter(gameObject, "fade-out", 2, EasingFunc.Linear, ( _, progress ) =>
+		{
+			Music.Volume = (1 - progress) * 0.4f;
+			Style.Opacity = 1 - progress;
+		}).OnComplete( _ =>
+		{
+			Music.Stop();
+			Style.Opacity = 0;
+			Delete(true);
+		});
+	}
+	
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => HashCode.Combine( Message );
+}

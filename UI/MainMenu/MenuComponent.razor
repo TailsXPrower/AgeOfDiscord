@@ -1,0 +1,139 @@
+@using System.Text.Json.Nodes
+@using Sandbox;
+@using Sandbox.Network
+@using Sandbox.UI
+@inherits PanelComponent
+@implements Component.INetworkListener
+
+@namespace Menu
+
+<root class="center-child">
+	<MainMenu Menu=@this style="@(GameNetworkSystem.IsActive ? "display: none" : "")" @ref="MainMenu"></MainMenu>
+	<CountrySelector Menu=@this style="display: none" @ref="CountrySelector"></CountrySelector>
+	<CountryInfo Menu=@this style="display: none" @ref="CountryInfo"></CountryInfo>
+	<LobbyMenu Menu=@this style="@(!GameNetworkSystem.IsActive ? "display: none" : "")" @ref="LobbyMenu"></LobbyMenu>
+	<StatisticsMenu Menu=@this style="display: none" @ref="StatisticsMenu"></StatisticsMenu>
+	<SettingsMenu Menu=@this style="display: none" @ref="SettingsMenu"></SettingsMenu>
+</root>
+
+@code
+{
+	public MainMenu MainMenu;
+	public CountrySelector CountrySelector;
+	public CountryInfo CountryInfo;
+	public LobbyMenu LobbyMenu;
+	public StatisticsMenu StatisticsMenu;
+	public SettingsMenu SettingsMenu;
+
+	protected override void OnStart()
+	{
+		base.OnStart();
+		
+		if ( !FileSystem.Data.FileExists( "settings.json" ) ) return;
+		
+		var json = FileSystem.Data.ReadJson<JsonObject>( "settings.json" );
+		var settings = json["settings"].AsObject();
+		SettingsMenu.Debug = settings["debug"]?.GetValue<bool>() ?? false;
+		SettingsMenu.Introduction = settings["introduction"]?.GetValue<bool>() ?? true;
+		SettingsMenu.DisableMusic = settings["disable_music"]?.GetValue<bool>() ?? false;
+	}
+
+	public void Transition(Panel from, Panel to)
+	{
+		to.Style.Opacity = 0;
+		Animation.Play( GameObject, "main-menu", 0.4f, EasingFunc.EaseInCubic, ( _, progress ) =>
+		{
+			from.Style.Opacity = 1 - progress;
+		} ).PlayAfter( GameObject, "main-menu", 0.4f, EasingFunc.EaseInCubic, ( _, progress ) =>
+		{
+			to.Style.Display = DisplayMode.Flex;
+			from.Style.Display = DisplayMode.None;
+			to.Style.Opacity = progress;
+		} );
+	}
+	
+	[Broadcast]
+	public void StartAll(bool selectedCountries)
+	{
+		if ( selectedCountries )
+		{
+			AddCountry(Connection.Local.DisplayName);
+			
+			var music = Scene.Components.GetInDescendants<SoundPointComponent>();
+			LobbyMenu.Style.PointerEvents = PointerEvents.None;
+			Animation.Play( GameObject, "fade-out", 1, EasingFunc.Linear, ( o, progress ) =>
+			{
+				LobbyMenu.Style.Opacity = 1 - progress;
+				Panel.Style.BackgroundColor = Color.Black.WithAlpha(progress);
+				music.Volume = 0.1f * (1 - progress);
+			} ).OnComplete( o =>
+			{
+				if ( Networking.IsHost )
+				{
+					if ( SettingsMenu.Debug )
+					{
+						Log.Info("Starting game");
+					}
+					
+					Scene.LoadFromFile( "Scenes/singleplayer.scene" );
+				}
+			});
+		}
+		else
+		{
+			Transition(LobbyMenu, CountrySelector);
+		}
+	}
+
+	[Broadcast]
+	public void AddCountry( string country )
+	{
+		if ( !LobbyMenu.SelectedCountries.ContainsValue( country ) )
+		{
+			LobbyMenu.SelectedCountries[Rpc.Caller.Id] = country;
+		}
+	}
+	
+	[Broadcast]
+	public void SelectCountry( string country )
+	{
+		if ( !LobbyMenu.SelectedCountries.ContainsValue( country ) )
+		{
+			LobbyMenu.SelectedCountries[Rpc.Caller.Id] = country;
+		}
+
+		if ( Networking.IsHost )
+		{
+			LobbyMenu.CheckAllSelected();
+		}
+	}
+
+	public void OnActive( Connection channel )
+	{
+		if (SettingsMenu.Debug)
+			Log.Info("Connected "+channel.DisplayName+", is game started: "+LobbyMenu.GameStarted);
+		
+		if ( LobbyMenu.GameStarted )
+		{
+			using ( Rpc.FilterInclude( channel ) )
+			{
+				Kick();
+			}
+		}
+
+		if ( Connection.All.Count > 6 )
+		{
+			using ( Rpc.FilterInclude( channel ) )
+			{
+				Kick();
+			}
+		}
+	}
+
+	[Broadcast]
+	public void Kick()
+	{
+		GameNetworkSystem.Disconnect();
+		Transition(LobbyMenu, MainMenu);
+	}
+}

@@ -1,0 +1,99 @@
+﻿@using Sandbox;
+@using Sandbox.Configs
+@using Sandbox.GameData
+@using Sandbox.Modes
+@using Sandbox.UI;
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+@attribute [StyleSheet]
+
+<root class="window left" style="width: 26vw; height: 32vh; margin-left: 10px; z-index: 1">
+	<div class="vertical-layout" style="gap: 0;">
+		<div class="horizontal-layout" style="margin: 5px;">
+			<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+				@GetProvinceName()
+			</div>
+			<button class="center-child" style="width: 45px; height: 45px; flex-shrink: 0; font-size: 20px;" onclick="@Close">
+				❌
+			</button>
+		</div>
+		@if ( Province != null )
+		{
+			<div class="horizontal-layout" style="margin: 5px;">
+				<div class="vertical-layout" style="width: 8vw;">
+					<div class="box" style="height: 20vh; background-image: url('@GameMap.SelectedProvince.Biome.ImageUrl'); background-size: cover">
+					</div>
+					<div class="box center-child">
+						<span style="font-size: 20px; padding: 5px; text-overflow: ellipsis; white-space: nowrap">@Province.Biome.Name</span>
+					</div>
+				</div>
+				<div class="vertical-layout" style="width: 53.5%;">
+					<div class="box" style="width: 100%;">
+						<span class="info">Manpower: @GetManpower()</span>
+					</div>
+					<div class="box" style="width: 100%;">
+						<span class="info">Country: @GetCountryName()</span>
+					</div>
+					<div class="box" style="width: 100%;">
+						<span class="info">Town: @GetTownName()</span>
+					</div>
+					<div class="box" style="width: 100%;">
+						<span class="info">Structure: @GetStructuresName()</span>
+					</div>
+					<div class="box" style="width: 100%;">
+						<span class="info">Culture: @Province.Culture.Name</span>
+					</div>
+				</div>
+			</div>	
+		}
+	</div>
+</root>
+
+@code
+{
+	public Province Province;
+	
+	public void Close()
+	{
+		Sound.Play( "click" ).Pitch = 0.8f;
+		Delete();
+		
+		var gameUi = Scene.Components.GetInDescendants<GameUI>();
+		if ( gameUi.CurrentMode != IMode.UnitMode )
+		{
+			ProvinceMode.DeselectProvince( Scene );
+			UnitMode.SelectedArmy = null;
+		}
+	}
+
+	private string GetManpower()
+	{
+		return Province.Country == Settings.PlayableCountry || Province.Country.Relations.TryGetValue(Settings.PlayableCountry, out var value) && value == Relation.Ally || Settings.PlayableCountry.IsSpectator ? Province.GetManpower().ToString() : "???";
+	}
+
+	private string GetProvinceName()
+	{
+		return Province != null ? Province.Name : "No selected province!";
+	}
+	
+	private string GetCountryName()
+	{
+		return Province.Country != null ? Province.Country.Name : "None";
+	}
+	
+	private string GetTownName()
+	{
+		return Province.Town != null ? Province.Town.Name : "None";
+	}
+	
+	private string GetStructuresName()
+	{
+		return Province.Structures.Count > 0 ? Province.Structures.Values.Select(structure => structure.GetName()).Aggregate( "", ( current, str ) => current + str + ",") : "None";
+	}
+	
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( Province );
+}

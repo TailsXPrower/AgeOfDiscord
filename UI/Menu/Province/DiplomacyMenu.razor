@@ -1,0 +1,71 @@
+﻿@using Sandbox;
+@using Sandbox.Configs
+@using Sandbox.GameData
+@using Sandbox.Modes
+@using Sandbox.UI;
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+@attribute [StyleSheet]
+
+<root class="center-child" style="position: absolute; width: 100%; height: 100%; background-color: rgb(0, 0, 0, 0.68); pointer-events: all; z-index: 1">
+	<div class="window" style="width: 56.5vw; height: 52vh;">
+		<div class="vertical-layout" style="gap: 0;">
+			<div class="horizontal-layout" style="margin: 5px;">
+				<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+					Diplomacy
+				</div>
+				@if ( SelectedCountry.Key != null )
+				{
+					<button class="center-child" style="width: 45px; height: 45px; flex-shrink: 0; font-size: 20px;" onclick="@Return">
+						↩
+					</button>
+				}
+				<button class="center-child" style="width: 45px; height: 45px; flex-shrink: 0; font-size: 20px;" onclick="@Close">
+					❌
+				</button>
+			</div>
+			@if ( SelectedCountry.Key == null )
+			{
+				<div class="flex-box" style="margin: 5px;">
+					@foreach (var country in Settings.PlayableCountry.Relations)
+					{
+						<button onclick="@( () => SelectCountry( country ) )">
+							<a style="font-size: 20px; padding: 10px">@country.Key.Name</a>
+						</button>
+					}
+				</div>	
+			}
+			else
+			{
+				<DiplomacyPanel Country="@SelectedCountry.Key" style="margin: 5px;"></DiplomacyPanel>
+			}
+		</div>
+	</div>
+</root>
+
+@code
+{
+	public KeyValuePair<Country, Relation> SelectedCountry;
+	
+	private void SelectCountry( KeyValuePair<Country, Relation> country )
+	{
+		SelectedCountry = country;
+	}
+	
+	private void Return()
+	{
+		SelectedCountry = new KeyValuePair<Country, Relation>();
+	}
+	
+	private void Close()
+	{
+		Sound.Play( "click" ).Pitch = 0.8f;
+		Delete();
+	}
+	
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( Settings.PlayableCountry, Settings.PlayableCountry.Relations, SelectedCountry );
+}

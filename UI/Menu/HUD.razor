@@ -1,0 +1,164 @@
+﻿{@using Sandbox;
+@using Sandbox.Configs
+@using Sandbox.GameData
+@using Sandbox.Modes
+@using Sandbox.UI;
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+@attribute [StyleSheet]
+
+<root style="width: 100%; height: 100%; z-index: 1">
+	<div class="vertical-layout" style="margin: 10px 0 0 10px;">
+		<div class="horizontal-layout">
+			@if ( Settings.PlayableCountry != null )
+			{
+				<button class="flag" style="background-image: url('@Settings.PlayableCountry.Flag')" onclick="@( () => OpenMenu( "Country" ) )">
+				</button>
+				<div class="vertical-layout">
+					<div class="window" style="max-height: 75px;">
+						<div ctooltip="@GetMoneyTooltip()" class="box" style="margin: 5px; min-width: 130px">
+							<img style="margin: 5px 0 5px 5px; width: 32px; height: 32px;" alt="money" src="/ui/icons/coin.png"><span style="font-size: 24px; padding: 5px;">@Settings.PlayableCountry.Balance.ToString( "N0" )</span>
+						</div>
+						<div ctooltip="@GetWoodTooltip()" class="box" style="margin: 5px; min-width: 130px">
+							<img style="margin: 5px 0 5px 5px; width: 32px; height: 32px;" alt="money" src="/ui/icons/wood.png"><span style="font-size: 24px; padding: 5px;">@Settings.PlayableCountry.Wood.ToString( "N0" )</span>
+						</div>
+						<div ctooltip="@GetOreTooltip()" class="box" style="margin: 5px; min-width: 130px">
+							<img style="margin: 5px 0 5px 5px; width: 32px; height: 32px;" alt="money" src="/ui/icons/ore.png"><span style="font-size: 24px; padding: 5px;">@Settings.PlayableCountry.Ore.ToString( "N0" )</span>
+						</div>
+						<div ctooltip="@GetManpowerTooltip()" class="box" style="margin: 5px; min-width: 130px">
+							<img style="margin: 5px 0 5px 5px; width: 32px; height: 32px;" alt="money" src="/ui/icons/manpower.png"><span style="font-size: 24px; padding: 5px;">@Settings.PlayableCountry.GetManpowerString()</span>
+						</div>
+					</div>
+					<div class="horizontal-layout">
+						<button class="center-child" style="padding: 0 10px 0 10px; height: 45px; font-size: 22px;" onclick="@( () => OpenMenu( "Province" ) )">
+							Province
+						</button>
+						<button class="center-child" style="padding: 0 10px 0 10px; height: 45px; font-size: 22px;" onclick="@( () => OpenMenu( "Relations" ) )">
+							Diplomacy
+						</button>
+						@{
+							var gameUi = Scene.Components.GetInDescendants<GameUI>();
+							if ( gameUi.CurrentMode == IMode.UnitMode )
+							{
+								<button class="center-child" style="padding: 0 10px 0 10px; height: 45px; font-size: 22px;" onclick="@( () => OpenMenu( "Army" ) )">
+									Army
+								</button>
+								<button class="center-child" style="padding: 0 10px 0 10px; height: 45px; font-size: 22px;" onclick="@( () => OpenMenu( "Unit" ) )">
+									Unit creation
+								</button>
+							}
+
+							if ( gameUi.CurrentMode == IMode.BuildMode )
+							{
+								<button class="center-child" style="padding: 0 10px 0 10px; height: 45px; font-size: 22px;" onclick="@( () => OpenMenu( "Structures" ) )">
+									Structures
+								</button>
+								<button class="center-child" style="padding: 0 10px 0 10px; height: 45px; font-size: 22px;" onclick="@( () => OpenMenu( "Build" ) )">
+									Build
+								</button>
+							}
+						}
+					</div>
+				</div>	
+			}
+		</div>
+	</div>
+</root>
+
+@code
+{
+	public void OpenMenu( string menu )
+	{
+		if ( Settings.PlayableCountry.IsSpectator )
+		{
+			PlaySound( "decline" );
+			return;
+		}
+
+		Sound.Play( "click" );
+
+		switch ( menu )
+		{
+			case "Province":
+				if ( ChildrenOfType<ProvinceMenu>().Count() != 0 )
+					return;
+
+				AddChild( new ProvinceMenu { Province = GameMap.SelectedProvince } );
+				break;
+			case "Country":
+				if ( ChildrenOfType<CountryMenu>().Count() != 0 )
+					return;
+
+				var gameMap = Scene.Components.GetInDescendants<GameMap>();
+				GameMap.SelectedCountry = Settings.PlayableCountry;
+				foreach ( var countryProvince in GameMap.Provinces.Values )
+				{
+					gameMap.PaletteTex.Update(
+						gameMap.GetColor( new Color32( (byte)countryProvince.GetX(), (byte)countryProvince.GetY(), 0 ),
+							false ), countryProvince.GetX(), countryProvince.GetY() );
+				}
+
+				AddChild( new CountryMenu { Country = Settings.PlayableCountry } );
+				break;
+			case "Relations":
+				if ( ChildrenOfType<DiplomacyMenu>().Count() != 0 )
+					return;
+
+				AddChild( new DiplomacyMenu() );
+				break;
+			case "Army":
+				if ( ChildrenOfType<ArmyMenu>().Count() != 0 )
+					return;
+
+				AddChild( new ArmyMenu { Army = UnitMode.SelectedArmy } );
+				break;
+			case "Unit":
+				if ( ChildrenOfType<UnitMenu>().Count() != 0 )
+					return;
+
+				AddChild( new UnitMenu() );
+				break;
+			case "Structures":
+				if ( ChildrenOfType<StructureMenu>().Count() != 0 )
+					return;
+
+				AddChild( new StructureMenu() );
+				break;
+			case "Build":
+				if ( ChildrenOfType<BuildMenu>().Count() != 0 )
+					return;
+
+				AddChild( new BuildMenu() );
+				break;
+		}
+	}
+
+	private string GetMoneyTooltip()
+	{
+		return $"Balance: {Settings.PlayableCountry.Balance}/nWeekly income: +{Settings.PlayableCountry.GetMoneyIncome()}/n0.001 coin per manpower";
+	}
+
+	private string GetWoodTooltip()
+	{
+		return $"Wood: {Settings.PlayableCountry.Wood}/nWeekly income: +{Settings.PlayableCountry.GetWoodIncome()}";
+	}
+
+	private string GetOreTooltip()
+	{
+		return $"Ore: {Settings.PlayableCountry.Ore}/nWeekly income: +{Settings.PlayableCountry.GetOreIncome()}";
+	}
+
+	private string GetManpowerTooltip()
+	{
+		return $"Manpower: {Settings.PlayableCountry.GetManpowerString()}/nWeekly income: +{Settings.PlayableCountry.GetManpowerIncome()}";
+	}
+
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash()
+	{
+		return Settings.PlayableCountry != null ? System.HashCode.Combine( Settings.PlayableCountry, Settings.PlayableCountry.Balance, Settings.PlayableCountry.Ore, Settings.PlayableCountry.Wood, Settings.PlayableCountry.GetManpower(), Scene.Components.GetInDescendants<GameUI>().CurrentMode ) : 0;
+	}
+}

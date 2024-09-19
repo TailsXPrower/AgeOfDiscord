@@ -1,0 +1,110 @@
+@using System.Text.Json.Nodes
+@using global::Menu
+@using Sandbox.Network
+@using Sandbox.UI
+@inherits Panel
+
+@namespace Menu
+
+<style>
+	.flag {
+		width: 8vw;
+		height: 17vh;
+		background-size: cover;
+		border-radius: 0 0 12em 12em;
+		transition: all 0.2s;
+
+		&:hover {
+			filter: brightness(0.5);
+		}
+	}
+	
+	.name {
+		font-size: 22px; 
+		text-align: center; 
+		color: white; 
+		font-family: 'Vinque';
+		text-shadow: 0 4px 2px darkgoldenrod;
+	}
+	
+</style>
+
+<root class="center-child">
+	<div class="vertical-layout center-child" style="gap: 40px">
+		<div class="title">
+			Choose your country
+		</div>
+		<div class="flex-box center-child" style="width: 52vw; gap: 20px">
+			@foreach (var info in Info.Where(info => info.Flag.Contains("shield")))
+			{
+				<div class="vertical-layout" style="width: 12vw; height: 24vh;">
+					<div class="center-child" style="width: 100%">
+						<button class="flag" style="background-image: url('@info.Flag')" onclick="@(() => Select(info))"></button>
+					</div>
+					<div class="center-child" style="width: 100%">
+						<span class="name">@info.Name</span>
+					</div>
+				</div>
+			}
+		</div>
+		@if ( !GameNetworkSystem.IsActive )
+		{
+			<div class="horizontal-layout">
+				<Button class="center-child" onclick=@Return style="padding: 0 40px 0 40px; height: 55px; font-size: 28px;">Return</Button>
+			</div>	
+		}
+	</div>
+</root>
+
+@code
+{
+	public MenuComponent Menu;
+
+	public struct CountryInfo
+	{
+		public string Name;
+		public string Description;
+		public string Slogan;
+		public string Flag;
+		public string Leader;
+	}
+
+	public List<CountryInfo> Info = new();
+
+	public CountrySelector()
+	{
+		var json = FileSystem.Mounted.ReadJson<JsonObject>( "/data/countries.json" );
+		var countries = json["countries"];
+		
+		if ( countries == null )
+		{
+			Log.Warning("Error while processing Countries!");
+			return;
+		}
+
+		foreach ( var jsonNode in countries.AsArray() )
+		{
+			Info.Add(new CountryInfo
+			{
+				Name = jsonNode["name"] != null ? jsonNode["name"].AsValue().GetValue<string>() : "Unknown name",
+				Description = jsonNode["description"] != null ? jsonNode["description"].AsValue().GetValue<string>() : "Unknown name",
+				Slogan = jsonNode["slogan"] != null ? jsonNode["slogan"].AsValue().GetValue<string>() : "Unknown name",
+				Flag = jsonNode["flag"] != null ? jsonNode["flag"].AsValue().GetValue<string>() : "Unknown name",
+				Leader = jsonNode["leader"] != null ? jsonNode["leader"].AsValue().GetValue<string>() : "Unknown name"
+			});
+		}
+	}
+	
+	void Select(CountryInfo info)
+	{
+		Menu.CountryInfo.Set(info);
+		Menu.Transition(this, Menu.CountryInfo);
+	}
+
+	void Return()
+	{
+		Menu.Transition(this, Menu.MainMenu);
+	}
+	
+	protected override int BuildHash() => HashCode.Combine( Info.Count );
+}

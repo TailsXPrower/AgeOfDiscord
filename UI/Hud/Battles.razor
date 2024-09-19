@@ -1,0 +1,73 @@
+﻿@using Sandbox.GameData
+@using Sandbox.UI;
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+@attribute [StyleSheet]
+
+<root style="position: absolute; width: 100%; height: 100%; z-index: 0;">
+	
+</root>
+
+@code
+{
+	Dictionary<Battle, Button> _battles = new();
+	
+	public override void Tick()
+	{
+		base.Tick();
+
+		try
+		{
+			var gameMap = Scene.Components.GetInDescendants<GameMap>();
+			var collision = gameMap.GameObject.Components.Get<PlaneCollider>();
+
+			foreach (var battle in GameMap.Battles.Values )
+			{
+				if ( _battles.ContainsKey( battle ) ) continue;
+				var button = new Button("", "", () => OpenBattle(battle));
+				button.AddClass( "battle" );
+				_battles.Add(battle, button);
+			}
+		
+			foreach (var (battle, button) in _battles)
+			{
+				if ( battle.Aggressor.CurrentBattle == null )
+				{
+					button.Delete(true);
+					_battles.Remove( battle );
+					continue;
+				}
+			
+				var pos = new Vector3( battle.Aggressor.Province.Center.LerpTo( battle.Defender.Province.Center, 0.5f ) );
+				var tx = Scene.Camera.PointToScreenNormal( collision.Transform.Local.PointToWorld( pos ) );
+			
+				if ( tx.x.AlmostEqual( 0 ) || tx.y.AlmostEqual( 0 ) || tx.x.AlmostEqual( 1 ) || tx.y.AlmostEqual( 1 ) )
+				{
+					button.Parent = null;
+				}
+				else
+				{
+					button.Style.SetRect( new Rect(new Vector2(Screen.Width * tx.x * button.ScaleFromScreen - button.Box.Rect.Width * button.ScaleFromScreen / 2, Screen.Height * tx.y * button.ScaleFromScreen - button.Box.Rect.Height * button.ScaleFromScreen / 2), new Vector2(60, 60)) );
+					if ( !Children.Contains( button ) )
+					{
+						AddChild( button );
+					}
+				}
+			}
+		} catch (NullReferenceException) {}
+	}
+
+	public void OpenBattle(Battle battle)
+	{
+		if (ChildrenOfType<BattleMenu>().Count() != 0)
+			return;
+				
+		AddChild(  new BattleMenu {Battle = battle});
+	}
+	
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( GameMap.SelectedProvince );
+}

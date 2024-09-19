@@ -1,0 +1,24 @@
+@using Sandbox.UI;
+
+@inherits Panel
+
+<root class="bar">
+    <div class="progress" style="width: @(Width * (Progress / MaxProgress)); position: relative; height: auto;"></div>
+</root>
+
+@code {
+    public float Progress = 100;
+    public float MaxProgress = 100;
+    public float Width = 100;
+    
+    public void SetVisible(bool visible)
+    {
+        Style.Display = visible switch
+        {
+            true => DisplayMode.Flex,
+            false => DisplayMode.None
+            };
+    }
+    
+    protected override int BuildHash() => System.HashCode.Combine( Width, Progress, MaxProgress );
+}

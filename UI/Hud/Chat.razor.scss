@@ -1,0 +1,45 @@
+@import "/UI/global.scss";
+
+Chat
+{
+	width: 100%;
+	height: 100%;
+	transition: opacity 0.2s ease-in-out;
+	
+	.input
+	{
+		color: white;
+	}
+
+	&.open
+	{
+		.input
+		{
+			background: #d9d9d9;
+			border: 2px #000;
+			pointer-events: all;
+			color: black;
+			margin: 5px;
+		}
+	}
+}
+
+.chat_entry
+{
+	//background-color: #222d;
+	padding: 2px;
+	gap: 10px;
+	text-shadow: 2px 2px #000a;
+
+	.author
+	{
+		color: black;
+		white-space: nowrap;
+		flex-shrink: 0;
+	}
+
+	.message
+	{
+		color: white;
+	}
+}

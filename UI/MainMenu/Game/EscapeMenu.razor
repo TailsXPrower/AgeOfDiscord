@@ -1,0 +1,62 @@
+﻿@using Sandbox;
+@using Sandbox.Network
+@using Sandbox.UI;
+@using System
+@using AgeOfDiscord.UI
+@inherits PanelComponent
+
+<root class="center-child" style="opacity: 0">
+	<div class="vertical-layout">
+		<button class="center-child" onclick=@Resume style="padding: 10px 40px 10px 40px; font-size: 28px;">Resume</button>
+		<button class="center-child" onclick="@OpenGuide" style="padding: 10px 40px 10px 40px; font-size: 28px;">Guide</button>
+		<button class="center-child" onclick="@Game.Overlay.ShowBinds" style="padding: 10px 40px 10px 40px; font-size: 28px;">Controls</button>
+		<button class="center-child" onclick=@ReturnToMainMenu style="padding: 10px 40px 10px 40px; font-size: 28px;">Exit game</button>
+	</div>
+</root>
+
+@code
+{
+	[Property] public bool IsOpen { get; set; }
+
+	protected override void OnUpdate()
+	{
+		if ( Input.EscapePressed )
+		{
+			Input.EscapePressed = false;
+			//The ESC Key is now yours to control, so you could do the following
+			IsOpen = !IsOpen;
+			Panel.Style.Opacity = IsOpen ? 1 : 0;
+		}
+
+		//SetClass("no-interact", !IsOpen || !IsVisible);
+	}
+
+	void OpenGuide()
+	{
+		Sound.Play( "click" );
+		var gameUi = Scene.Components.GetInDescendants<GameUI>();
+		gameUi.OpenGuide();
+		
+		IsOpen = false;
+		Panel.Style.Opacity = IsOpen ? 1 : 0;
+	}
+
+	void Resume()
+	{
+		Sound.Play( "click" );
+		IsOpen = false;
+		Panel.Style.Opacity = IsOpen ? 1 : 0;
+	}
+
+	void ReturnToMainMenu()
+	{
+		if (GameNetworkSystem.IsActive)
+			GameNetworkSystem.Disconnect();
+		
+		Sound.StopAll(0);
+		Scene.LoadFromFile("Scenes/mainmenu.scene");
+	}
+
+	protected override int BuildHash() => System.HashCode.Combine( IsOpen );
+}
+

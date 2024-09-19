@@ -1,0 +1,177 @@
+@using Sandbox;
+@using Sandbox.Modes
+@using AgeOfDiscord.UI.Menu
+@using global::Menu
+@using Sandbox.UI
+
+@namespace AgeOfDiscord.UI
+@inherits PanelComponent
+
+<root>
+	<HUD style="z-index: 10;"></HUD>
+	<div class="right-top horizontal-layout" style="margin: 10px 10px 0 0; gap: 20px;">
+		<button class="center-child" style="width: 50px; height: 50px;" onclick="@OpenGuide">
+			<img style="width: 44px; height: 44px;" alt="money" src="/ui/icons/book.png">
+		</button>
+		<div class="vertical-layout" style="gap: 4px;">
+			<div class="horizontal-layout" style="width: 400px; height: 50px; gap: 4px;">
+				<button class="center-child" style="width: 50px; height: 50px;" onclick="@( () => OnChangeSpeed( Math.Max( GetSpeed() - 1, 1 ) ) )">
+					<a style="font-size: 24px;">-</a>
+				</button>
+				<button ctooltip="@PauseTooltip()" class="box center-child" style="width: 300px; height: 50px;" onclick="@OnPause">
+					<a style="font-size: 24px; padding: 10px">@Time</a>
+				</button>
+				<button class="center-child" style="width: 50px; height: 50px;" onclick="@( () => OnChangeSpeed( Math.Min( GetSpeed() + 1, 5 ) ) )">
+					<a style="font-size: 24px;">+</a>
+				</button>
+			</div>
+			<div class="center-child">
+				<div class="horizontal-layout" style="gap: 4px;">
+					<button class="center-child @GetClassFor( 1 )" style="width: 50px; height: 10px;" onclick="@( () => OnChangeSpeed( 1 ) )">
+					</button>
+					<button class="center-child @GetClassFor( 2 )" style="width: 50px; height: 10px;" onclick="@( () => OnChangeSpeed( 2 ) )">
+					</button>
+					<button class="center-child @GetClassFor( 3 )" style="width: 50px; height: 10px;" onclick="@( () => OnChangeSpeed( 3 ) )">
+					</button>
+					<button class="center-child @GetClassFor( 4 )" style="width: 50px; height: 10px;" onclick="@( () => OnChangeSpeed( 4 ) )">
+					</button>
+					<button class="center-child @GetClassFor( 5 )" style="width: 50px; height: 10px;" onclick="@( () => OnChangeSpeed( 5 ) )">
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="vertical-layout right-bottom" style="margin: 0 10px 10px 0; align-items: flex-end">
+		<button class="btn-mode @GetClassFor( IMode.ProvinceMode )" onclick="@( () => OnChangeMode( IMode.ProvinceMode ) )">
+			Province
+		</button>
+		<button class="btn-mode @GetClassFor( IMode.CultureMode )" onclick="@( () => OnChangeMode( IMode.CultureMode ) )">
+			Culture
+		</button>
+		<button class="btn-mode @GetClassFor( IMode.UnitMode )" onclick="@( () => OnChangeMode( IMode.UnitMode ) )">
+			Unit
+		</button>
+		<button class="btn-mode @GetClassFor( IMode.BuildMode )" onclick="@( () => OnChangeMode( IMode.BuildMode ) )">
+			Build
+		</button>
+	</div>
+
+	<Tooltip></Tooltip>
+
+	@if ( CurrentMode == IMode.UnitMode )
+	{
+		<Battles style="z-index: 12;"></Battles>
+	}
+</root>
+
+@code
+{
+	public IMode CurrentMode = IMode.ProvinceMode;
+	private string Time = "0:00";
+
+	public Introduction Introduction;
+
+	protected override void OnUpdate()
+	{
+		base.OnUpdate();
+
+		if ( !LobbyMenu.Introduction && Introduction != null )
+		{
+			Animation.Stop(GameObject);
+			Introduction?.Delete();
+			Introduction = null;
+		}
+	}
+
+	protected override void OnEnabled()
+	{
+		base.OnEnabled();
+
+		if ( LobbyMenu.Introduction )
+		{
+			Introduction = new Introduction();
+			Panel.AddChild( Introduction );	
+		}
+	}
+	
+	protected override void OnStart()
+	{
+		base.OnStart();
+		
+		if ( LobbyMenu.Introduction )
+		{
+			Introduction.Start(GameObject);
+		} else
+		{
+			Introduction?.Delete();
+			Introduction = null;
+		}
+	}
+
+	protected override void OnFixedUpdate()
+	{
+		var time = Scene.Components.GetInDescendants<TimeComponent>();
+		Time = time.Pause ? "Paused" : time.GetFormattedTime();
+		base.OnFixedUpdate();
+	}
+
+	private string PauseTooltip()
+	{
+		var time = Scene.Components.GetInDescendants<TimeComponent>();
+		return !Networking.IsHost ? "Only the host can control the time" : time.Pause ? "Click to resume" : "Click to stop the time";
+	}
+	
+	public void OpenGuide()
+	{
+		if (Panel.ChildrenOfType<GuideMenu>().Count() != 0)
+			return;
+		
+		Sound.Play( "click" );
+		
+		Panel.AddChild(  new GuideMenu() );
+	}
+	
+	private void OnPause()
+	{
+		Sound.Play( "click" ).Pitch = 0.8f;
+		var time = Scene.Components.GetInDescendants<TimeComponent>();
+		time.Pause = !time.Pause;
+	}
+	
+	private void OnChangeSpeed(int speed)
+	{
+		Sound.Play( "click" ).Pitch = 1.2f;
+		var time = Scene.Components.GetInDescendants<TimeComponent>();
+		time.ChangeSpeed(speed);
+	}
+	
+	private int GetSpeed()
+	{
+		var time = Scene.Components.GetInDescendants<TimeComponent>();
+		return time.CurrentSpeed;
+	}
+	
+	private string GetClassFor(int speed)
+	{
+		var time = Scene.Components.GetInDescendants<TimeComponent>();
+		return speed == time.CurrentSpeed ? "active" : "";
+	}
+
+	private void OnChangeMode(IMode mode)
+	{
+		Sound.Play( "click" );
+		CurrentMode.OnDeselect(Scene);
+		CurrentMode = mode;
+		mode.OnSelect(Scene);
+	}
+	
+	private string GetClassFor(IMode mode)
+	{
+		return mode == CurrentMode ? "btn-mode-active" : "";
+	}
+
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( Time, CurrentMode, Networking.IsHost );
+}

@@ -1,0 +1,49 @@
+@using global::Menu
+@using Sandbox.UI
+@inherits Panel
+
+@namespace Menu
+
+<root class="center-child">
+	<div class="vertical-layout center-child" style="gap: 40px">
+		<div class="title">
+			Stats
+		</div>
+		<div class="window vertical-layout" style="width: 28vw; height: 18vw; gap: 2px;" @ref="Stats"></div>
+		<div class="horizontal-layout">
+			<Button class="center-child" onclick=@Return style="padding: 0 40px 0 40px; height: 55px; font-size: 28px;">Return</Button>
+			<Button class="center-child" onclick=@Refresh style="padding: 0 40px 0 40px; height: 55px; font-size: 28px;">Refresh</Button>
+		</div>
+	</div>
+</root>
+
+@code
+{
+	public Panel Stats;
+	public MenuComponent Menu;
+	
+	public void LoadStats()
+	{
+		foreach ( var playerStat in Sandbox.Services.Stats.LocalPlayer )
+		{
+			var entry = Stats.AddChild<StatEntry>();
+			entry.Stat = playerStat;
+		}
+	}
+
+	void Refresh()
+	{
+		Stats.DeleteChildren();
+		foreach ( var playerStat in Sandbox.Services.Stats.LocalPlayer )
+		{
+			var entry = Stats.AddChild<StatEntry>();
+			entry.Stat = playerStat;
+		}
+	}
+
+	void Return()
+	{
+		Stats.DeleteChildren();
+		Menu.Transition(this, Menu.MainMenu);
+	}
+}

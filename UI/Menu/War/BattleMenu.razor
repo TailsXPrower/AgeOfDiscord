@@ -1,0 +1,144 @@
+﻿@using Sandbox;
+@using Sandbox.Configs
+@using Sandbox.GameData
+@using Sandbox.Modes
+@using Sandbox.UI;
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+@attribute [StyleSheet]
+
+<root class="center-child" style="position: absolute; width: 100%; height: 100%; z-index: 999">
+	<div class="window" style="width: 70vw; height: 46vh; max-height: 52vh;">
+		<div class="vertical-layout" style="gap: 0;">
+			<div class="horizontal-layout" style="margin: 5px;">
+				<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+					@Battle.Name
+				</div>
+				<button class="center-child" style="width: 45px; height: 45px; flex-shrink: 0; font-size: 20px;" onclick="@Close">
+					❌
+				</button>
+			</div>
+			<div class="horizontal-layout" style="margin: 5px;">
+				<div class="vertical-layout" style="width: 25%;">
+					<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+						@Battle.Aggressor.Country.Name
+					</div>
+					<div class="box" style="background-image: url('@Battle.Aggressor.Country.Flag'); width: 100%; height: 34vh; border-radius: 0 0 12vw 12vw; background-size: cover; background-position: center">
+					</div>
+				</div>
+				<div class="vertical-layout" style="width: 50%;">
+					<div class="vertical-layout">
+						<div class="horizontal-layout">
+							<div class="vertical-layout" style="width: 50%;">
+								<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+									@Battle.Aggressor.Name
+								</div>
+								<div class="box" style="padding: 10px; font-size: 20px;">
+									@("Health: " + Battle.Aggressor.Health)
+								</div>
+								<div class="box" style="padding: 10px; font-size: 20px;">
+									@("Damage: " + Battle.Aggressor.GetDamage())
+								</div>
+								<div class="box vertical-layout scroll" style="padding: 10px; font-size: 20px; gap: 2px; max-height: 130px">
+									<a style="font-size: 20px; flex-shrink: 0">Units: @Battle.Aggressor.Units.Count/@Battle.Aggressor.GetMaxUnits()</a>
+									@{
+										var aggressorUnits = GetUnits(Battle.Aggressor);
+										@foreach (var unit in aggressorUnits)
+										{
+											if ( aggressorUnits[^1] != unit )
+											{
+												<a style="font-size: 20px; flex-shrink: 0">@unit</a>
+											}
+											else
+											{
+												<a style="font-size: 20px; flex-shrink: 0">@unit</a>
+											}
+										}
+									}
+								</div>
+							</div>
+							<div class="vertical-layout" style="width: 50%;">
+								<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+									@Battle.Defender.Name
+								</div>
+								<div class="box" style="padding: 10px; font-size: 20px;">
+									@("Health: " + Battle.Defender.Health)
+								</div>
+								<div class="box" style="padding: 10px; font-size: 20px;">
+									@("Defense: " + Battle.Defender.GetDefense())
+								</div>
+								<div class="box vertical-layout scroll" style="padding: 10px; font-size: 20px; gap: 2px; max-height: 130px">
+									<a style="font-size: 20px; flex-shrink: 0">Units: @Battle.Defender.Units.Count/@Battle.Defender.GetMaxUnits()</a>
+									@{
+										var defenderUnits = GetUnits(Battle.Defender);
+										@foreach (var unit in defenderUnits)
+										{
+											if ( defenderUnits[^1] != unit )
+											{
+												<a style="font-size: 20px; flex-shrink: 0">@unit</a>
+											}
+											else
+											{
+												<a style="font-size: 20px; flex-shrink: 0">@unit</a>
+											}
+										}
+									}
+								</div>
+							</div>
+						</div>
+
+						<div class="vertical-layout">
+							<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+								@(Battle.AttackChance > Battle.DefenseChance ? Battle.Aggressor.Country.Name + " is winning" : Battle.Defender.Country.Name + " is winning")
+							</div>
+							<ProgressBar Progress="@(Battle.AttackChance * 100F)" @MaxProgress="@(100)" @Width=@(630) style="margin: 0 10px 10px 10px"></ProgressBar>
+						</div>
+					</div>
+				</div>
+				<div class="vertical-layout" style="width: 25%;">
+					<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+						@Battle.Defender.Country.Name
+					</div>
+					<div class="box" style="background-image: url('@Battle.Defender.Country.Flag'); width: 100%; height: 34vh; border-radius: 0 0 12vw 12vw; background-size: cover; background-position: center">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</root>
+
+@code
+{
+	public Battle Battle;
+	
+	public List<string> GetUnits(Army army)
+	{
+		var unitCount =  new Dictionary<string, KeyValuePair<int, KeyValuePair<int, int>>>();;
+		foreach (var unit in army.Units.Where(unit => !unitCount.TryAdd(unit.Config.Name, new KeyValuePair<int, KeyValuePair<int, int>>( 1, new KeyValuePair<int, int>(unit.Health, 100)))))
+		{
+			var pair = unitCount[unit.Config.Name];
+			var count = pair.Key;
+			count++;
+			
+			var (currentHealth, maxHealth) = pair.Value;
+			currentHealth += unit.Health;
+			maxHealth += 100;
+
+			unitCount[unit.Config.Name] = new KeyValuePair<int, KeyValuePair<int, int>>( count, new KeyValuePair<int, int>( currentHealth, maxHealth ) );
+		}
+
+		return unitCount.Select( pair => $"- {pair.Value.Key}x {pair.Key} | {pair.Value.Value.Key}/{pair.Value.Value.Value}" ).ToList();
+	}
+	
+	private void Close()
+	{
+		Sound.Play( "click" ).Pitch = 0.8f;
+		Delete();
+	}
+	
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( Settings.PlayableCountry, Battle, Battle.AttackChance, Battle.Aggressor.Health, Battle.Defender.Health );
+}

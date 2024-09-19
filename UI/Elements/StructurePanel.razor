@@ -1,0 +1,98 @@
+﻿@using AgeOfDiscord.UI
+@using AgeOfDiscord.UI.Menu
+@using Sandbox;
+@using Sandbox.Exceptions
+@using Sandbox.GameData
+@using Sandbox.UI;
+@using Sandbox.Utils
+@inherits Panel
+
+<style>
+	.bar {
+		width: 300px;
+		height: 12px; 
+		background-color: darkred;
+		border: 1px black;
+		border-radius: 10px;
+
+		.progress {
+			background-color: green;
+			border: 1px lightgreen;
+			border-radius: 10px;
+			transition: width 0.1s;
+		}
+	}
+</style>
+
+<root class="box horizontal-layout" style="flex-shrink: 0;">
+	<div class="vertical-layout" style="gap: 2px; width: 100%">
+		<a style="font-size: 22px; padding: 10px 10px 5px 10px">@Structure.GetName()</a>
+		<a style="font-size: 20px; padding: 0 10px 5px 10px">@Structure.GetDescription()</a>
+		<a style="font-size: 20px; padding: 0 10px 0 10px"><span style="color: darkgreen">Located in:</span> <span style="text-overflow: ellipsis; white-space: nowrap">@Structure.Province.Name</span></a>
+		<a style="font-size: 20px; padding: 0 10px 10px 10px"><span style="color: darkgreen">Is built:</span> <span style="text-overflow: ellipsis">@Structure.IsCompleted</span></a>
+		@if ( !Structure.IsCompleted )
+		{
+			<ProgressBar Progress="@Structure.BuiltHammers" @MaxProgress="@Structure.Config.HammerCost" @Width=@( 300 ) style="margin: 0 10px 10px 10px"></ProgressBar>
+		}
+	</div>
+	@if ( !Structure.Config.TownHall )
+	{
+		<button class="center-child" style="width: 45px; height: 45px; flex-shrink: 0; font-size: 20px; margin: 5px;" onclick="@DeleteStructure">
+			<img style="margin: 5px 0 5px 5px; width: 32px; height: 32px;" alt="money" src="/ui/icons/delete.png">
+		</button>	
+	}
+</root>
+
+@code
+{
+	public Structure Structure = null;
+	
+	public void DeleteStructure()
+	{
+		var gameUi = Scene.Components.GetInDescendants<GameUI>();
+		var confirmation = new Confirmation
+		{
+			OnAgree = () =>
+			{
+				try
+				{
+					if ( Structure.Province.Army?.CurrentBattle != null )
+					{
+						throw new GameException("Unable to remove structure, province is under attack!");
+					}
+					
+					Structure.Delete(Structure.Id, Structure.Province.RemapCoordinates);
+					Delete();
+					
+					var menus = gameUi.Panel.ChildrenOfType<HUD>().ToList();
+					if ( menus.Count != 0 )
+					{
+						var menu = menus.First();
+						var structureMenus = menu.ChildrenOfType<StructureMenu>().ToList();
+
+						if ( structureMenus.Count != 0 )
+						{
+							var structureMenu = structureMenus.First();
+							structureMenu.Delete();
+							menu.AddChild(new StructureMenu());
+						}
+					}
+				}
+				catch (GameException e)
+				{
+					var gameMap = Scene.Components.GetInDescendants<GameMap>();
+					var collision = gameMap.Components.Get<PlaneCollider>();
+
+					Logger.ErrorSelf(gameMap, collision.Transform.Local.PointToWorld( Structure.Province.Center ), e.Message);
+				}
+			},
+			Message = $"Are you sure you want to delete {Structure.GetName()}? It will return 50% of the wood used."
+		};
+		gameUi.Panel.AddChild( confirmation );
+	}
+
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( Structure.Province, Structure.IsCompleted, Structure.BuiltHammers );
+}

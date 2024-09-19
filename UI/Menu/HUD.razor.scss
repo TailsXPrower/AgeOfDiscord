@@ -1,0 +1,11 @@
+.flag {
+  width: 6vw; 
+  height: 12vh;
+  background-size: cover;
+  border-radius: 0 0 4em 4em;
+  transition: all 0.2s;
+  
+  &:hover {
+    filter: brightness(0.5);
+  }
+}

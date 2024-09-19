@@ -1,0 +1,150 @@
+@using global::Menu
+@using Sandbox.Network
+@using Sandbox.UI
+@inherits Panel
+
+@namespace Menu
+
+<root class="center-child">
+	<div class="vertical-layout center-child" style="gap: 40px">
+		@if ( !GameNetworkSystem.IsActive )
+		{
+			<div class="title">
+				LOBBIES
+			</div>
+			<div class="window vertical-layout scroll" style="width: 28vw; height: 18vw; gap: 2px;" @ref="Lobbies"></div>
+			<div class="horizontal-layout">
+				@if ( !GameNetworkSystem.IsActive )
+				{
+					<Button class="center-child" onclick=@Return style="padding: 0 40px 0 40px; height: 55px; font-size: 28px;">Return</Button>
+					<Button class="center-child" onclick=@Create style="padding: 0 40px 0 40px; height: 55px; font-size: 28px;">Create new lobby</Button>	
+				}
+				else
+				{
+					<Button class="center-child" onclick=@Leave style="padding: 0 40px 0 40px; height: 55px; font-size: 28px;">Leave lobby</Button>
+				}
+			</div>
+			<div class="horizontal-layout">
+				<div style="padding: 0 40px 0 40px; height: 55px; font-size: 28px; color: indianred; text-shadow: 2px 2px black; width: 32vw; text-align: center">Be aware that the multiplayer is buggy as hell. Stability not guaranteed.</div>
+			</div>
+		}
+		else
+		{
+			<div class="title">
+				LOBBY
+			</div>
+			<div class="horizontal-layout">
+				<div class="window vertical-layout scroll" style="width: 28vw; height: 18vw; gap: 2px;">
+					@foreach (var connection in Connection.All)
+					{
+						<div class="box horizontal-layout" style="font-size: 28px; margin: 5px; flex-shrink: 0">
+							<span style="padding: 5px 0 5px 5px;">@connection.DisplayName</span><span style="padding: 5px 5px 5px 10px; color: gold; text-shadow: 2px 2px black">@(connection.IsHost ? "Host" : "")</span>
+						</div>
+					}
+				</div>
+				@if ( Networking.IsHost )
+				{
+					<div class="window vertical-layout" style="gap: 2px;">
+						<Checkbox Checked="@Introduction" ValueChanged="@OnIntroduction" style="padding: 0 10px 0 10px; height: 55px; font-size: 28px;">Enable game intro</Checkbox>
+						<Checkbox Checked="@RandomCountries" ValueChanged="@OnRandomCountries" style="padding: 0 10px 0 10px; height: 55px; font-size: 28px;">Random countries</Checkbox>
+					</div>
+				}
+			</div>
+			<div class="horizontal-layout">
+				@if ( Networking.IsHost )
+				{
+					<Button class="center-child" onclick=@Start style="padding: 0 40px 0 40px; height: 55px; font-size: 28px;">Start</Button>	
+				}
+				<Button class="center-child" onclick=@Leave style="padding: 0 40px 0 40px; height: 55px; font-size: 28px;">Leave lobby</Button>
+			</div>
+		}
+	</div>
+</root>
+
+@code
+{
+	public static bool Introduction = true;
+	public static bool RandomCountries = false;
+	public static bool GameStarted = false;
+
+	public static Dictionary<Guid, string> SelectedCountries = new();
+	
+	public MenuComponent Menu;
+	public Panel Lobbies;
+
+	public LobbyEntry SelectedLobby;
+	
+	public void OnIntroduction(bool enabled)
+	{
+		Introduction = enabled;
+	}
+	
+	public void OnRandomCountries(bool enabled)
+	{
+		RandomCountries = enabled;
+	}
+
+	public async void LoadLobbies()
+	{
+		var list = await Networking.QueryLobbies("lfproject.age_of_discord");
+		foreach ( var lobbyInformation in list )
+		{
+			if (lobbyInformation.Members >= 6)
+				return;
+			
+			var entry = Lobbies.AddChild<LobbyEntry>();
+			entry.Lobby = lobbyInformation;
+			entry.Lobby.MaxMembers = 6;
+			entry.OnClick = () =>
+			{
+				SelectedLobby = entry;
+				
+				LoadingScreen.Title = "Connecting...";
+				GameNetworkSystem.Connect(SelectedLobby.Lobby.LobbyId);
+			};
+		}
+	}
+	
+	public void CheckAllSelected()
+	{
+		if ( Connection.All.Any( connection => !SelectedCountries.ContainsKey( connection.Id ) ) )
+		{
+			return;
+		}
+		
+		Menu.StartAll( true );
+	}
+	
+	void Start()
+	{
+		GameStarted = true;
+		Menu.StartAll( RandomCountries );
+	}
+	
+	void Leave()
+	{
+		SelectedCountries = new Dictionary<Guid, string>();
+		GameNetworkSystem.Disconnect();
+		Menu.Transition(this, Menu.MainMenu);
+	}
+	
+	void Create()
+	{
+		SelectedCountries = new Dictionary<Guid, string>();
+		Introduction = true;
+		RandomCountries = false;
+		GameStarted = false;
+		GameNetworkSystem.CreateLobby();
+	}
+
+	void Return()
+	{
+		Lobbies.DeleteChildren();
+		Menu.Transition(this, Menu.MainMenu);
+	}
+	
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( GameNetworkSystem.IsActive, Connection.All.Count );
+}

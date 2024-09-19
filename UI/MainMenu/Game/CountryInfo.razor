@@ -1,0 +1,172 @@
+@using System.Text.Json.Nodes
+@using global::Menu
+@using Sandbox.Network
+@using Sandbox.UI
+@inherits Panel
+
+@namespace Menu
+
+<style>
+	.flag {
+		width: 16vw;
+		height: 34vh;
+		background-size: cover;
+		border-radius: 0 0 12em 12em;
+	}
+	
+	.name {
+		font-size: 24px; 
+		text-align: center; 
+		color: black; 
+		font-family: 'Vinque';
+		text-decoration-line: underline;
+		text-decoration-color: black;
+		text-decoration-thickness: 2px;
+	}
+
+	.desc {
+		font-size: 22px;
+		text-align: center;
+		color: black;
+		font-family: 'Vinque';
+		padding: 10px;
+	}
+</style>
+
+<root class="center-child">
+	<div class="vertical-layout center-child" style="gap: 40px">
+		@if ( Info.Name != null )
+		{
+			<div class="title">
+				@Info.Name
+			</div>
+			<div class="horizontal-layout">
+				<div class="vertical-layout" style="gap: 8px;">
+					<div class="box" style="width: 12vw; height: 28vh; background-image: url('@Leaders[Info.Leader]'); background-size: cover">
+					</div>
+					<div class="box center-child" style="height: 5vh;">
+						<span style="font-size: 20px; max-width: 10vw; text-align: center; font-family: 'Vinque';">@Info.Leader</span>
+					</div>
+				</div>
+				<div class="vertical-layout box center-child" style="width: 34vw; height: 34vh; gap: 4px;">
+					<span class="name">
+						@Info.Slogan
+					</span>
+					<span class="desc">
+						@Info.Description
+					</span>
+				</div>
+			</div>
+			@if ( LobbyMenu.SelectedCountries.ContainsKey( Connection.Local.Id ) )
+			{
+				<div class="horizontal-layout">
+					<div class="box center-child" style="padding: 0 40px 0 40px; height: 55px; font-size: 28px;">Wait for others...</div>
+				</div>
+			}
+			else
+			{
+				<div class="horizontal-layout">
+					<Button class="center-child" onclick=@Return style="padding: 0 40px 0 40px; height: 55px; font-size: 28px;">Return</Button>
+					<Button class="center-child" onclick=@Select style="padding: 0 40px 0 40px; height: 55px; font-size: 28px;">@SelectText</Button>
+				</div>	
+			}
+		}
+	</div>
+</root>
+
+@code
+{
+	public MenuComponent Menu;
+
+	public string SelectText = "Select";
+
+	public static CountrySelector.CountryInfo Info;
+
+	private readonly Dictionary<string, string> Leaders = new();
+
+	public CountryInfo()
+	{
+		var json = FileSystem.Mounted.ReadJson<JsonObject>( "/data/leaders.json" );
+		var leaders = json["leaders"];
+		
+		if ( leaders == null )
+		{
+			Log.Warning("Error while processing Leaders!");
+			return;
+		}
+		
+		foreach (var jsonNode in leaders.AsArray())
+		{
+			Leaders.Add(jsonNode["name"] != null ? jsonNode["name"].AsValue().GetValue<string>() : "Unknown name", 
+				jsonNode["portrait"] != null ? jsonNode["portrait"].AsValue().GetValue<string>() : "unknown");
+		}
+	}
+
+	public void Set( CountrySelector.CountryInfo info )
+	{
+		Info = info;
+	}
+
+	void Select( PanelEvent panelEvent )
+	{
+		@if ( !GameNetworkSystem.IsActive )
+		{
+			var music = Scene.Components.GetInDescendants<SoundPointComponent>();
+			Style.PointerEvents = PointerEvents.None;
+			Animation.Play( Menu.GameObject, "fade-out", 1, EasingFunc.Linear, ( o, progress ) =>
+			{
+				Style.Opacity = 1 - progress;
+				Parent.Style.BackgroundColor = Color.Black.WithAlpha(progress);
+				music.Volume = 0.1f * (1 - progress);
+			} ).OnComplete( o =>
+			{
+				LobbyMenu.Introduction = SettingsMenu.Introduction;
+				LobbyMenu.RandomCountries = false;
+				LobbyMenu.GameStarted = true;
+				LobbyMenu.SelectedCountries[Connection.Local.Id] = Connection.Local.DisplayName;
+				Scene.LoadFromFile( "Scenes/singleplayer.scene" );
+			});	
+		}
+		else
+		{
+			if (LobbyMenu.SelectedCountries.ContainsValue( Info.Name ) )
+			{
+				Animation.Play( Menu.GameObject, "error", 3, EasingFunc.Linear, ( o, progress ) =>
+				{
+					if ( panelEvent.Target.ElementName.Equals( "button" ) )
+					{
+						panelEvent.Target.Style.BackgroundColor = Color.FromRgb( 0xdc3545 );
+					}
+					else
+					{
+						panelEvent.Target.Parent.Style.BackgroundColor = Color.FromRgb( 0xdc3545 );
+					}
+					
+					SelectText = "Country already selected";
+				} ).OnComplete( o =>
+				{
+					if ( panelEvent.Target.ElementName.Equals( "button" ) )
+					{
+						panelEvent.Target.Style.BackgroundColor = Color.FromRgb( 0xd9d9d9 );
+					}
+					else
+					{
+						panelEvent.Target.Parent.Style.BackgroundColor = Color.FromRgb( 0xd9d9d9 );
+					}
+				
+					SelectText = "Select";
+				});
+				return;
+			}
+			
+			Menu.SelectCountry(Info.Name);
+		}
+	}
+
+	void Return()
+	{
+		Menu.Transition(this, Menu.CountrySelector);
+	}
+	
+	protected override int BuildHash() => HashCode.Combine( Info, SelectText );
+}

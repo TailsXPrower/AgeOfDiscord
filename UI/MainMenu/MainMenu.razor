@@ -1,0 +1,54 @@
+@using Sandbox.Network
+@using Sandbox.UI
+@inherits Panel
+
+@namespace Menu
+
+<root class="center-child">
+	<div class="vertical-layout center-child" style="gap: 40px">
+		<div class="title">
+			Age of Discord
+		</div>
+		<div class="vertical-layout" style="width: 12vw">
+			<button class="center-child" onclick=@NewGame style="padding: 0 10px 0 10px; height: 55px; font-size: 28px;">Singleplayer</button>
+			<button class="center-child" onclick=@Multiplayer style="padding: 0 10px 0 10px; height: 55px; font-size: 28px;">Multiplayer</button>
+			<button class="center-child" onclick=@Settings style="padding: 0 10px 0 10px; height: 55px; font-size: 28px;">Settings</button>
+			<button class="center-child" onclick=@Statistics style="padding: 0 10px 0 10px; height: 55px; font-size: 28px;">Statistics</button>
+			<button class="center-child" onclick=@Game.Close style="padding: 0 10px 0 10px; height: 55px; font-size: 28px;">Exit</button>
+		</div>
+	</div>
+</root>
+
+@code
+{
+	public MenuComponent Menu;
+	
+	void NewGame()
+	{
+		@if ( !GameNetworkSystem.IsActive )
+		{
+			LobbyMenu.SelectedCountries.Clear();
+		}
+		//GameController.IsMultiplayer = false;
+		Menu.Transition( this, Menu.CountrySelector );
+	}
+
+	void Multiplayer()
+	{
+		Menu.Transition( this, Menu.LobbyMenu );
+		
+		if (!GameNetworkSystem.IsActive)
+			Menu.LobbyMenu.LoadLobbies();
+	}
+	
+	void Statistics()
+	{
+		Menu.Transition( this, Menu.StatisticsMenu );
+		Menu.StatisticsMenu.LoadStats();
+	}
+	
+	void Settings()
+	{
+		Menu.Transition( this, Menu.SettingsMenu );
+	}
+}

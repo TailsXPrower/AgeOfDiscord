@@ -1,0 +1,39 @@
+﻿@using Sandbox;
+@using Sandbox.Configs
+@using Sandbox.UI;
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+
+<root class="window left" style="width: 20vw; height: 42vh; margin-left: 10px; z-index: 1">
+	<div class="vertical-layout">
+		<div class="horizontal-layout" style="margin: 5px;">
+			<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+				Structures
+			</div>
+			<button class="center-child" style="width: 45px; height: 45px; flex-shrink: 0; font-size: 20px;" onclick="@Close">
+				❌
+			</button>
+		</div>
+		<div class="vertical-layout scroll" style="flex-shrink: 0; margin: 5px; width: 19vw; height: 34vh">
+			@foreach ( var structure in Settings.PlayableCountry.GetStructures().OrderBy(structure => structure.IsCompleted) )
+			{
+				<StructurePanel @Structure=@structure></StructurePanel>
+			}
+		</div>
+	</div>
+</root>
+
+@code
+{
+	public void Close()
+	{
+		Sound.Play( "click" ).Pitch = 0.8f;
+		Delete();
+	}
+
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( Settings.PlayableCountry.GetStructures().Count );
+}

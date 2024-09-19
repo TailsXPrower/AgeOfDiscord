@@ -1,0 +1,147 @@
+﻿@using Sandbox;
+@using Sandbox.Configs
+@using Sandbox.GameData
+@using Sandbox.Modes
+@using Sandbox.UI;
+@using Sandbox.Utils
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+@attribute [StyleSheet]
+
+<root class="center-child" style="position: absolute; width: 100%; height: 100%; z-index: 110; background-color: rgb(0, 0, 0, 0.68); pointer-events: all;">
+	<div class="window" style="width: 70vw; height: 46vh; max-height: 52vh;">
+		<div class="vertical-layout" style="gap: 0;">
+			<div class="horizontal-layout" style="margin: 5px;">
+				<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+					Trade
+				</div>
+				<button class="center-child" style="width: 45px; height: 45px; flex-shrink: 0; font-size: 20px;" onclick="@Close">
+					❌
+				</button>
+			</div>
+			<div class="horizontal-layout" style="margin: 5px;">
+				<div class="vertical-layout" style="width: 25%;">
+					<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+						@Settings.PlayableCountry.Name
+					</div>
+					<div class="box" style="background-image: url('@Settings.PlayableCountry.Flag'); width: 100%; height: 34vh; border-radius: 0 0 12vw 12vw; background-size: cover; background-position: center">
+					</div>
+				</div>
+				<div class="vertical-layout" style="width: 50%;">
+					<div class="vertical-layout">
+						<div class="horizontal-layout">
+							<div class="vertical-layout" style="width: 50%;">
+								<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+									We offer
+								</div>
+								<div class="horizontal-layout">
+									<div class="box center-child" style="width: 40%; height: 45px; font-size: 20px;">
+										Money
+									</div>
+									<TextEntry class="box center-child" Placeholder="0" Value:bind="@OurOffer["Coins"]" MaxLength="@( 10 )" NumberFormat="0" Numeric="@true" style="width: 60%; height: 45px; font-size: 20px; @(WeWant["Coins"] > 0 ? "pointer-events: none; background-color: gray;" : "pointer-events: all; background-color: #d9d9d9;")"></TextEntry>
+								</div>
+								<div class="horizontal-layout">
+									<div class="box center-child" style="width: 40%; height: 45px; font-size: 20px;">
+										Wood
+									</div>
+									<TextEntry class="box center-child" Placeholder="0" Value:bind="@OurOffer["Wood"]" MaxLength="@( 10 )" NumberFormat="0" Numeric="@true" style="width: 60%; height: 45px; font-size: 20px; @(WeWant["Wood"] > 0 ? "pointer-events: none; background-color: gray;" : "pointer-events: all; background-color: #d9d9d9;")"></TextEntry>
+								</div>
+								<div class="horizontal-layout">
+									<div class="box center-child" style="width: 40%; height: 45px; font-size: 20px;">
+										Ore
+									</div>
+									<TextEntry class="box center-child" Placeholder="0" Value:bind="@OurOffer["Ore"]" MaxLength="@( 10 )" NumberFormat="0" Numeric="@true" style="width: 60%; height: 45px; font-size: 20px; @(WeWant["Ore"] > 0 ? "pointer-events: none; background-color: gray;" : "pointer-events: all; background-color: #d9d9d9;")"></TextEntry>
+								</div>
+								<div class="horizontal-layout">
+									<div class="box center-child" style="width: 40%; height: 45px; font-size: 20px;">
+										Manpower
+									</div>
+									<TextEntry class="box center-child" Placeholder="0" Value:bind="@OurOffer["Manpower"]" MaxLength="@( 10 )" NumberFormat="0" Numeric="@true" style="width: 60%; height: 45px; font-size: 20px; @(WeWant["Manpower"] > 0 ? "pointer-events: none; background-color: gray;" : "pointer-events: all; background-color: #d9d9d9;")"></TextEntry>
+								</div>
+							</div>
+							<div class="vertical-layout" style="width: 50%;">
+								<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+									We want
+								</div>
+								<div class="horizontal-layout">
+									<TextEntry class="box center-child" Placeholder="0" Value:bind="@WeWant["Coins"]" MaxLength="@( 10 )" NumberFormat="0" Numeric="@true" style="width: 60%; height: 45px; font-size: 20px; @(OurOffer["Coins"] > 0 ? "pointer-events: none; background-color: gray;" : "pointer-events: all; background-color: #d9d9d9;")"></TextEntry>
+									<div class="box center-child" style="width: 40%; height: 45px; font-size: 20px;">
+										Money
+									</div>
+								</div>
+								<div class="horizontal-layout">
+									<TextEntry class="box center-child" Placeholder="0" Value:bind="@WeWant["Wood"]" MaxLength="@( 10 )" NumberFormat="0" Numeric="@true" style="width: 60%; height: 45px; font-size: 20px; @(OurOffer["Wood"] > 0 ? "pointer-events: none; background-color: gray;" : "pointer-events: all; background-color: #d9d9d9;")"></TextEntry>
+									<div class="box center-child" style="width: 40%; height: 45px; font-size: 20px;">
+										Wood
+									</div>
+								</div>
+								<div class="horizontal-layout">
+									<TextEntry class="box center-child" Placeholder="0" Value:bind="@WeWant["Ore"]" MaxLength="@( 10 )" NumberFormat="0" Numeric="@true" style="width: 60%; height: 45px; font-size: 20px; @(OurOffer["Ore"] > 0 ? "pointer-events: none; background-color: gray;" : "pointer-events: all; background-color: #d9d9d9;")"></TextEntry>
+									<div class="box center-child" style="width: 40%; height: 45px; font-size: 20px;">
+										Ore
+									</div>
+								</div>
+								<div class="horizontal-layout">
+									<TextEntry class="box center-child" Placeholder="0" Value:bind="@WeWant["Manpower"]" MaxLength="@( 10 )" NumberFormat="0" Numeric="@true" style="width: 60%; height: 45px; font-size: 20px; @(OurOffer["Manpower"] > 0 ? "pointer-events: none; background-color: gray;" : "pointer-events: all; background-color: #d9d9d9;")"></TextEntry>
+									<div class="box center-child" style="width: 40%; height: 45px; font-size: 20px;">
+										Manpower
+									</div>
+								</div>
+							</div>
+						</div>
+						<button class="box center-child" style="width: 100%; height: 45px; font-size: 20px;" onclick="@SendOffer">
+							Send an offer
+						</button>
+					</div>
+				</div>
+				<div class="vertical-layout" style="width: 25%;">
+					<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+						@CountryToTrade.Name
+					</div>
+					<div class="box" style="background-image: url('@CountryToTrade.Flag'); width: 100%; height: 34vh; border-radius: 0 0 12vw 12vw; background-size: cover; background-position: center">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</root>
+
+@code
+{
+	public Country CountryToTrade;
+
+	public Dictionary<string, int> OurOffer = new() {{"Coins", 0}, {"Wood", 0}, {"Ore", 0}, {"Manpower", 0}};
+	public Dictionary<string, int> WeWant = new() {{"Coins", 0}, {"Wood", 0}, {"Ore", 0}, {"Manpower", 0}};
+	
+	private void SendOffer()
+	{
+		if ( OurOffer.Values.All( value => value == 0 ) || WeWant.Values.All( value => value == 0 ))
+		{
+			return;
+		}
+
+		var gameUi = Scene.Components.GetInDescendants<GameUI>();
+		try
+		{
+			Settings.PlayableCountry.SendOffer(CountryToTrade, OurOffer, WeWant);
+			Logger.NotifySelf(gameUi, $"We sent a trade offer to {CountryToTrade.Name}!", "Excellent...");
+			Delete();
+		}
+		catch ( Exception e )
+		{
+			Logger.NotifySelf(gameUi, e.Message, "Fine");
+		}
+	}
+	
+	private void Close()
+	{
+		Sound.Play( "click" ).Pitch = 0.8f;
+		Delete();
+	}
+	
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( Settings.PlayableCountry, CountryToTrade);
+}

@@ -1,0 +1,109 @@
+﻿@using Sandbox;
+@using Sandbox.Configs
+@using Sandbox.Modes
+@using Sandbox.UI;
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+
+<root class="window right" style="margin: 0 10px 0 0; z-index: 1">
+	<div class="vertical-layout" style="margin: 5px;">
+		<div class="horizontal-layout">
+			<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+				Unit creation
+			</div>
+			<button class="center-child" style="width: 45px; height: 45px; flex-shrink: 0; font-size: 20px;" onclick="@Close">
+				❌
+			</button>
+		</div>
+		<div class="vertical-layout scroll" style="position: relative; flex-shrink: 0; height: 400px; width: 330px;">
+			@{
+				if ( UnitMode.SelectedArmy == null )
+				{
+					<div class="vertical-layout center-child" style="width: 100%; height: 100%; font-size: 32px; text-align: center">
+						<span class="vertical-layout center-child">
+							It seems that you have not selected army, create new one?
+							<button ctooltip="@GetArmyTooltip()" class="center-child" style="width: 50%; padding: 10px;" onclick="@CreateNewArmy">
+								<a style="font-size: 20px;">Create new army</a>
+							</button>
+						</span>
+					</div>
+					return;
+				}
+				
+				if ( !Settings.PlayableCountry.GetAvailableUnits().Any() )
+				{
+					<div class="center-child" style="width: 100%; height: 100%; font-size: 32px;">
+						No available units!
+					</div>
+					return;
+				}
+
+				foreach ( var unit in Settings.PlayableCountry.GetAvailableUnits() )
+				{
+					<button class="box vertical-layout" onclick="@( () => OnClickUnit( unit ) )" style="flex-shrink: 0; gap: 2px">
+						<a style="font-size: 20px; padding: 10px 10px 0 10px">@unit.Name</a>
+						<a style="font-size: 20px; padding: 5px 10px 5px 10px">@unit.Description</a>
+						<a style="font-size: 20px; padding: 0 10px 0 10px"><span style="color: darkgreen">Damage:</span><span style="padding: 0 4px 0 4px">@unit.Damage</span></a>
+						<a style="font-size: 20px; padding: 0 10px 10px  10px"><span style="color: darkgreen">Defense:</span><span style="padding: 0 4px 0 4px">@unit.Defense</span></a>
+						<a style="font-size: 20px; padding: 0 10px 0 10px"><span style="color: darkgreen">Ore cost:</span><span style="padding: 0 4px 0 4px">@unit.OreCost</span><img style="width: 24px; height: 24px;" alt="money" src="/ui/icons/ore.png"></a>
+						<a style="font-size: 20px; padding: 0 10px 10px 10px"><span style="color: darkgreen">Manpower cost:</span><span style="padding: 0 4px 0 4px">@unit.ManpowerCost</span><img style="width: 24px; height: 24px;" alt="money" src="/ui/icons/manpower.png"></a>
+					</button>
+				}
+			}
+		</div>
+	</div>
+</root>
+
+@code
+{
+	public void Close()
+	{
+		Sound.Play( "click" ).Pitch = 0.8f;
+		Delete();
+	}
+
+	private string GetArmyTooltip()
+	{
+		if ( !Settings.PlayableCountry.IsAvailableUnit( Settings.PlayableCountry.GetEliteUnit() ) )
+		{
+			return "First we need to build a command headquarters!";
+		}
+		
+		if ( Settings.PlayableCountry.Armies.Count >= Settings.PlayableCountry.Towns.Count )
+		{
+			return "Army limit reached";
+		}
+		
+		return "We will spend 10 ore to create an army.";
+	}
+	
+	private void CreateNewArmy()
+	{
+		if ( Settings.PlayableCountry.Armies.Count >= Settings.PlayableCountry.Towns.Count )
+		{
+			PlaySound("decline");
+			return;
+		}
+		
+		if ( !Settings.PlayableCountry.IsAvailableUnit( Settings.PlayableCountry.GetEliteUnit() ) )
+		{
+			PlaySound("decline");
+			return;
+		}
+		
+		var country = Settings.PlayableCountry;
+		country.CreateArmy(Scene);
+	}
+	
+	private void OnClickUnit(ConfigUnit unit)
+	{
+		var country = Settings.PlayableCountry;
+		country.CreateUnit(unit.Name);
+	}
+
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( Settings.PlayableCountry.GetAvailableUnits() );
+}

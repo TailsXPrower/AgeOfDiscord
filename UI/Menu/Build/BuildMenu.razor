@@ -1,0 +1,103 @@
+﻿@using Sandbox;
+@using Sandbox.Configs
+@using Sandbox.UI;
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+
+<root class="window right" style="width: 20vw; height: 42vh; margin-right: 10px; z-index: 1">
+	<div class="vertical-layout">
+		<div class="horizontal-layout" style="margin: 5px;">
+			<div class="box center-child" style="width: 100%; height: 45px; font-size: 20px;">
+				New structures
+			</div>
+			<button class="center-child" style="width: 45px; height: 45px; flex-shrink: 0; font-size: 20px;" onclick="@Close">
+				❌
+			</button>
+		</div>
+		<div class="vertical-layout scroll" style="flex-shrink: 0; margin: 5px; width: 19vw; height: 34vh">
+			<div class="box" style="flex-shrink: 0; width: 19vw; font-size: 17px;">
+				<div class="vertical-layout" style="gap: 0;">
+					<span style="margin: 5px">The more manpower there is in a province, the faster buildings are built. And the speed of construction depends
+					on the required amount of productivity. ( Formula: P / M = H, where P - production cost, M - manpower in province, H - hours to complete )</span>
+					<span style="margin: 5px">Efficient biomes mean where a building is most efficient and produces more resources.</span>
+				</div>
+			</div>
+			@foreach (var structure in Settings.Structures.Values.Where(structure => !structure.TownHall))
+			{
+				<button class="box vertical-layout @GetClassFor(structure)" onclick="@(() => OnSelectStructure(structure))" style="flex-shrink: 0; gap: 2px">
+					<a style="font-size: 22px; padding: 10px 10px 5px 10px">@structure.Name</a>
+					<a style="font-size: 20px; padding: 0 10px 5px 10px">@structure.Description</a>
+					<a style="font-size: 20px; padding: 0 10px 0 10px"><span style="color: darkgreen">Cost:</span>@structure.Cost</a>
+					<a style="font-size: 20px; padding: 0 10px 0 10px"><span style="color: darkgreen">Wood cost:</span>@structure.WoodCost</a>
+					<a style="font-size: 20px; padding: 0 10px 10px 10px"><span style="color: darkgreen">Production cost:</span>@structure.HammerCost</a>
+
+					@if ( structure.MaxPerTown > 0 )
+					{
+					<a style="font-size: 20px; padding: 0 10px 0 10px"><span style="color: darkgreen">Max per town:</span>@structure.MaxPerTown</a>
+					}
+
+					@if ( structure.EffectiveBiomes.Count > 0 )
+					{
+					<a style="font-size: 20px; padding: 0 10px 10px 10px"><span style="color: darkgreen">Efficient biomes:</span>@structure.EffectiveBiomes.Aggregate( "", ( current, name ) => current + " " + name )</a>
+					}
+
+					@if ( structure.OnlyForTown)
+					{
+					<a style="font-size: 20px; color: indianred; padding: 0 10px 10px 10px">Allowed to build only in town province!</a>
+					}
+				</button>
+			}
+		</div>
+	</div>
+</root>
+
+@code
+{
+	public static ConfigStructure SelectedStructure;
+	
+	private void OnSelectStructure(ConfigStructure structure)
+	{
+		var gameMap = Scene.Components.GetInDescendants<GameMap>();
+
+		if ( SelectedStructure == structure )
+		{
+			SelectedStructure = null;
+			
+			foreach (var color in GameMap.Provinces.Values.Select(province => new Color32( (byte)province.RemapCoordinates.x, (byte)province.RemapCoordinates.y, 0 )))
+			{
+				gameMap.ChangeColor(color, gameMap.GetColor(color, false));
+			}
+			return;
+		}
+		
+		SelectedStructure = structure;
+		foreach (var color in GameMap.Provinces.Values.Select(province => new Color32( (byte)province.RemapCoordinates.x, (byte)province.RemapCoordinates.y, 0 )))
+		{
+			gameMap.ChangeColor(color, gameMap.GetColor(color, false));
+		}
+	}
+	
+	private static string GetClassFor(ConfigStructure structure)
+	{
+		return SelectedStructure == structure ? "active" : "";
+	}
+	
+	public void Close()
+	{
+		Sound.Play( "click" ).Pitch = 0.8f;
+		SelectedStructure = null;
+		var gameMap = Scene.Components.GetInDescendants<GameMap>();
+		foreach (var color in GameMap.Provinces.Values.Select(province => new Color32( (byte)province.RemapCoordinates.x, (byte)province.RemapCoordinates.y, 0 )))
+		{
+			gameMap.ChangeColor(color, gameMap.GetColor(color, false));
+		}
+		
+		Delete();
+	}
+
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( SelectedStructure );
+}

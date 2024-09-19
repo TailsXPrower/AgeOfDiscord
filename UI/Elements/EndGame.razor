@@ -1,0 +1,44 @@
+﻿@using Sandbox;
+@using Sandbox.Configs
+@using Sandbox.GameData
+@using Sandbox.Modes
+@using Sandbox.Network
+@using Sandbox.UI;
+@inherits Panel
+
+@namespace AgeOfDiscord.UI.Menu
+@attribute [StyleSheet]
+
+<root class="center-child" style="position: absolute; width: 100%; height: 100%; z-index: 120; background-color: black; pointer-events: all;">
+	<div class="window" style="width: 22vw; max-height: 32vh;">
+		<div class="vertical-layout" style="gap: 0;">
+			<div class="box center-child" style="padding: 10px; font-size: 20px; margin: 5px; text-align: center">
+				@Message
+			</div>
+			<div class="horizontal-layout" style="gap: 2px; margin: 5px">
+				<button class="center-child" style="width: 100%;" onclick="@Leave">
+					<a style="font-size: 20px; padding: 5px;">Leave this game</a>
+				</button>
+			</div>
+		</div>
+	</div>
+</root>
+
+@code
+{
+	public string Message;
+
+	private void Leave()
+	{
+		if (GameNetworkSystem.IsActive)
+			GameNetworkSystem.Disconnect();
+		
+		Sound.StopAll(0);
+		Scene.LoadFromFile( "Scenes/mainmenu.scene" );
+	}
+	
+	/// <summary>
+	/// the hash determines if the system should be rebuilt. If it changes, it will be rebuilt
+	/// </summary>
+	protected override int BuildHash() => System.HashCode.Combine( Message );
+}
